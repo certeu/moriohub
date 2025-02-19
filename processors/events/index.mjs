@@ -17,26 +17,27 @@ export default function eventsStreamProcessor (data, tools, topic) {
   /*
    * Cache events if configured to do so
    */
-  if (config.cache) tools.cache.event(data)
+  if (tools.getSettings('tap.events.cache', false)) tools.cache.event(data)
 
   /*
    * Create note when host ID is missing
    */
-  if (!data.host.id) tools.note(`[event] Host lacks ID: : ${JSON.stringify(data)}`)
+  if (!tools.get(data, 'host.id', false)) tools.note(`[event] Host lacks ID: : ${JSON.stringify(data)}`)
 
   /*
    * Hand over to module-specific logic
    */
-  if (data?.morio?.module && typeof modules[data.morio.module] === 'function') {
+  const module = tools.get(data,['labels', 'morio.module'], false)
+  if (module && typeof modules[module] === 'function') {
     try {
-      modules[data.morio.module](data, tools)
+      modules[module](data, tools)
     }
     catch(err) {
       tools.note(`[event] Error in module logic`, { err, data })
     }
   }
-  else if (config.log_unhandled) {
-    tools.note(`[event] Cannot handle message`, data)
+  else if (tools.getSettings('tap.events.log_unhandled', false)) {
+    tools.note(`[event] Cannot process message (${module})`, data)
   }
 }
 
@@ -44,34 +45,11 @@ export default function eventsStreamProcessor (data, tools, topic) {
  * This is used for both the UI and to generate the default settings
  */
 export const info = {
-  title: 'Event data stream processor',
-  about: `This stream processor will process event data flowing through your Morio collection.
+  info: `This stream processor will process event data flowing through your Morio collection.
 
 It can cache recent events, and supports dynamic loading of module-specific logic.`,
   settings: {
-    enabled: {
-      title: 'Enable events stream processor',
-      dflt: true,
-      type: 'list',
-      list: [
-        {
-          val: false,
-          label: 'Disabled',
-          about: 'Select this to completely disabled this stream processor',
-        },
-        {
-          val: true,
-          label: 'Enabled',
-          about: 'Select this to enable this stream processor',
-        },
-      ]
-    },
-    topics: {
-      dflt: ['events'],
-      title: 'List of topics to subscribe to',
-      about: `Changing this from the default \`events\` is risky`,
-      type: 'labels',
-    },
+    topics: ['events'],
     cache: {
       dflt: true,
       title: 'Cache event data',

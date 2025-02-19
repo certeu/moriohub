@@ -1,0 +1,10 @@
+merge:
+  git:
+    moriohub:
+      url: "https://github.com/certeu/moriohub.git"
+  processors:
+    - "git:/processors/**@moriohub"
+
+moriodata:
+  info: An overlay that bundles all Morio stream processors available on Moriohub
+

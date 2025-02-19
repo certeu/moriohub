@@ -1,50 +1,17 @@
-{{#MORIO_DOCS}}
-about: |-
-  An auditbeat module for Linux system
+- moriodata:
+    info: "Auditd rules for Linux"
+    href: "https://github.com/certeu/moriohub/blob/develop/modules/audit/rule-templates.d/linux-system.rules"
+    version: 1
+    vars:
+      AUDIT_LINUX_SYSTEM_RULE_FILES:
+        dflt:
+          - /etc/morio/audit/rules.d/linux-system-morio.rules
+          - /etc/morio/audit/rules.d/linux-system-mitre.rules
+        info: A list of files with auditd rules to load
 
-  This combines the `system` and `auditd` auditbeat modules to gather basic data
-  from a Linux system.
-vars:
-  defaults:
-    LINUX_SYSTEM_AUDIT_MITRE: false # Note: used in rules file only
-    LINUX_SYSTEM_AUDIT_MULTICAST: false
-    LINUX_SYSTEM_AUDIT_RULE_FILES:
-      - /etc/morio/audit/rules.d/linux-system.rules
-    LINUX_SYSTEM_HYPERVISOR_VMWARE: false # Note: used in rules file only
-  local:
-    LINUX_SYSTEM_INVENTORY_INTERVAL: The interval to use for inventory data
-    LINUX_SYSTEM_AUDIT_MULTICAST: Enables data collection on multicast sockets
-    LINUX_SYSTEM_AUDIT_MITRE: Adds data to map audit events to the MITRE ATT&CK framework
-    LINUX_SYSTEM_AUDIT_RULE_FILES: A list of files with auditd rules to load
-    LINUX_SYSTEM_HYPERVISOR_VMWARE: Enable this when running on a VMWare hypervisor
-  global:
-    - MORIO_TRACK_INVENTORY
-{{/MORIO_DOCS}}
-
-{{^MORIO_DOCS}}
 - module: auditd
-{{#LINUX_SYSTEM_AUDIT_MULTICAST}}
-  socket_type: multicast
-{{/LINUX_SYSTEM_AUDIT_MULTICAST}}
-  audit_rules: |
-    -w /etc/morio/audit/config.yml
-    -w /etc/morio/logs/config.yml
-    -w /etc/morio/audit/modules.d/*.yml
-    -w /etc/morio/audit/rules.d/*.rules
-    -w /etc/morio/logs/modules.d/*.yml
-    -w /etc/morio/logs/inputs.d/*.yml
-  audit_rule_files: {{{ LINUX_SYSTEM_AUDIT_RULE_FILES }}}
+  audit_rule_files: {|{ AUDIT_LINUX_SYSTEM_RULE_FILES }|}
   ignore_errors: false
-  processors:
-    - add_fields:
-        target: morio
-        fields:
-          module: {{ MORIO_MODULE_NAME }}
-    - add_fields:
-        target: host
-        fields:
-          id: {{ MORIO_CLIENT_UUID }}
-    - add_id: null
 
 - module: system
   datasets:
@@ -55,39 +22,3 @@ vars:
   login.wtmp_file_pattern: /var/log/wtmp*
   login.btmp_file_pattern: /var/log/btmp*
   user.detect_password_changes: true
-  processors:
-    - add_fields:
-        target: morio
-        fields:
-          module: {{ MORIO_MODULE_NAME }}
-    - add_fields:
-        target: host
-        fields:
-          id: {{ MORIO_CLIENT_UUID }}
-    - add_id: null
-
-{{#MORIO_TRACK_INVENTORY}}
-- module: system
-  datasets:
-    - host
-    - package
-  period: {{ LINUX_SYSTEM_INVENTORY_INTERVAL }}
-  state.period: 6h
-  login.wtmp_file_pattern: /var/log/wtmp*
-  login.btmp_file_pattern: /var/log/btmp*
-  user.detect_password_changes: true
-  processors:
-    - add_fields:
-        target: morio
-        fields:
-          module: {{ MORIO_MODULE_NAME }}
-    - add_fields:
-        target: host
-        fields:
-          id: {{ MORIO_CLIENT_UUID }}
-    - add_id: null
-    - add_locale:
-        format: abbreviation
-{{/MORIO_TRACK_INVENTORY}}
-{{/MORIO_DOCS}}
-

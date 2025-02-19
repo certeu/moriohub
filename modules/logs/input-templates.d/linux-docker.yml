@@ -1,0 +1,65 @@
+- moriodata:
+    info: Collects log data from Docker when the logs are in JSON or tab-delimited text formats
+    href: "https://morio.it/hub/modules/logs/linux-docker"
+    vars:
+      LOGS_LINUX_DOCKER_LOG_PATHS:
+        dflt:
+          - /var/lib/docker/containers/*/*-json.log
+        info: A list of (glob) paths from which to collect Docker logs
+    version: 1
+
+- type: filestream
+  id: docker_everything
+  paths: {|{ LOGS_LINUX_DOCKER_LOG_PATHS }|}
+
+  processors:
+
+    - if:
+        regexp:
+          message: '^{"log":".*}$' # default Docker text log format
+      then:
+        - dissect:
+            field: "message"
+            tokenizer: "{\"log\":\"%{event.message}\",\"stream\":\"%{event.stream}\",\"time\":\"%{temp_timestamp}\"}"
+            target_prefix: ''
+            ignore_missing: true
+            ignore_failure: true
+            overwrite_keys: true
+        - replace:
+            fields:
+              - field: "event.message"
+                pattern: "\\\\u0009"
+                replacement: "  "
+            ignore_missing: true
+            fail_on_error: false
+        - add_labels:
+            labels:
+              log.format: "json"
+      else:
+        - dissect:
+            field: "message"
+            tokenizer: "%{temp_timestamp}\t%{client.ip}\t%{client.id}\t%{client.session_name}\t%{server.ip}\t%{event.message}"
+            target_prefix: ''
+            ignore_missing: true
+            ignore_failure: true
+            overwrite_keys: true
+        - replace:
+            fields:
+              - field: "event.message"
+                pattern: "\\t"
+                replacement: "  "
+            ignore_missing: true
+            fail_on_error: false
+        - add_labels:
+            labels:
+              log.format: "tsv"
+
+    - timestamp:
+        field: temp_timestamp
+        layouts:
+          - '2006-01-02T15:04:05.999999999Z'
+          - '2006-01-02 15:04:05 -0700'
+        timezone: Local
+    - drop_fields:
+        fields: temp_timestamp
+

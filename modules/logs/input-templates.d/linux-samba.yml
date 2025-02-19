@@ -1,0 +1,40 @@
+- moriodata:
+    info: "Collects log data from Samba on Linux systems"
+    href: "https://morio.it/hub/modules/logs/linux-samba"
+    vars:
+      LOGS_LINUX_SAMBA_LOG_PATHS:
+        dflt:
+          - /var/log/samba/log.*
+        info: A (glob) list of paths from which to collect Samba logs
+    version: 1
+
+- type: filestream
+  id: samba_everything
+
+  parsers:
+    - multiline:
+        type: pattern
+        pattern: '^\['
+        negate: true
+        match: after
+        skip_newline: true
+  paths: {|{ LOGS_LINUX_SAMBA_LOG_PATHS }|}
+
+  processors:
+    - dissect:
+        field: "message"
+        tokenizer: "[%{temp_timestamp}, %{log.level}] %{service.module.file}:%{service.module.line}(%{service.function})%{event.message}"
+        target_prefix: ''
+        ignore_missing: true
+        ignore_failure: true
+        overwrite_keys: true
+        trim_values: left # as the Syslog level can have spaces
+
+    - timestamp:
+        field: temp_timestamp
+        layouts:
+          - '2006/01/02 15:04:05.999999'
+        timezone: Local
+    - drop_fields:
+        fields: temp_timestamp
+

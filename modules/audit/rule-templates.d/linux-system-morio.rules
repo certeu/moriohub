@@ -1,0 +1,9 @@
+#
+# Keep an eye on Morio config files
+#
+-w /etc/morio/audit/config.yml
+-w /etc/morio/logs/config.yml
+-w /etc/morio/audit/modules.d/*.yml
+-w /etc/morio/audit/rules.d/*.rules
+-w /etc/morio/logs/modules.d/*.yml
+-w /etc/morio/logs/inputs.d/*.yml

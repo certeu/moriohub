@@ -31,14 +31,14 @@ export default function checksStreamProcessor (data, tools, topic) {
   /*
    * Update the cache
    */
-  if (config.cache) tools.cache.healthcheck(summary, data, config)
+  if (tools.getSettings('tap.checks.cache', false)) tools.cache.healthcheck(summary, tools.getSettings('tap.checks', {}))
 
   /*
    * Escalate if needed
    */
   if (
     !summary.up &&
-    config.escalate_when_down &&
+    tools.getSettings('tap.checks.eventify', false) &&
     data.url.full.indexOf('MORIO_IGNORE_WHEN_DOWN') === -1
   ) tools.produce.event({
     context: tools.create.context('check', summary.id, summary.from),
@@ -57,7 +57,7 @@ export default function checksStreamProcessor (data, tools, topic) {
    * Can't do a simple if (!dbce) here because dbce can be zero
    */
   if (summary.dbce !== undefined) {
-    const { certificate_days = 21 } = config
+    const { certificate_days = 21 } = tools.getSettings('tap.checks', {})
     if (
       summary.dbce < certificate_days &&
       /*
@@ -79,6 +79,11 @@ export default function checksStreamProcessor (data, tools, topic) {
 }
 
 /*
+ * Give this processor an id so we can use that in the logs
+ */
+checksStreamProcessor.id = 'checks'
+
+/*
  * Takes healthcheck data and returns and array with the key observations
  *
  * @param {object} data - The healthcheck data
@@ -90,13 +95,16 @@ export default function checksStreamProcessor (data, tools, topic) {
 function healthcheckSummary (data, tools) {
   return {
     // Up or not?
-    up: (config.up_values.indexOf(data.monitor.status.toLowerCase()) !== -1) ? 1 : 0,
+    up: (tools.getSettings('tap.checks.up_values', []).indexOf(data.monitor.status.toLowerCase()) !== -1) ? 1 : 0,
     // Milliseconds the healthcheck took
     ms: Math.ceil(data.monitor.duration.us/1000),
     // Days before certificate expiry
-    dbce: (config.certificate_check && data.monitor.type === 'http' && data.tls && data.url?.scheme === 'https')
-      ? checkCertificateExpiry(data, tools)
-      : undefined,
+    dbce: (
+      tools.getSettings('tap.checks.certificate_check', false) &&
+      data.monitor.type === 'http' &&
+      data.tls &&
+      data.url?.scheme === 'https'
+    ) ? checkCertificateExpiry(data, tools) : undefined,
     // Uptime from historic healthchecks
     uptime: data.state.up / data.state.checks,
     // Start of the historic healthchecks
@@ -140,36 +148,13 @@ const checkCertificateExpiry = (data, tools) => {
  * This is used for both the UI and to generate the default settings
  */
 export const info = {
-  title: 'Health checks stream processor',
-  about: `This stream processor will process health check data flowing through your Morio collection.
+  info: `This stream processor will process health check data flowing through your Morio collection.
 
 It can cache recent health check data, as well as enventify them for event-driven automation.
 It also supports verifying the expiry of TLS certificates.
 `,
   settings: {
-    enabled: {
-      title: 'Enable health checks stream processor',
-      dflt: true,
-      type: 'list',
-      list: [
-        {
-          val: false,
-          label: 'Disabled',
-          about: 'Select this to completely disabled this stream processor',
-        },
-        {
-          val: true,
-          label: 'Enabled',
-          about: 'Select this to enable this stream processor',
-        },
-      ]
-    },
-    topics: {
-      dflt: ['checks'],
-      title: 'List of topics to subscribe to',
-      about: `Changing this from the default \`checks\` is risky`,
-      type: 'labels',
-    },
+    topics: ['checks'],
     cache: {
       dflt: true,
       title: 'Cache health check data',

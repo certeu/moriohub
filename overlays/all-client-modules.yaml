@@ -1,0 +1,9 @@
+merge:
+  git:
+    moriohub:
+      url: "https://github.com/certeu/moriohub.git"
+  modules:
+    - "git:/modules/**@moriohub"
+
+moriodata:
+  info: An overlay that bundles all Morio client modules available on Moriohub

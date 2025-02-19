@@ -22,54 +22,34 @@ export default function auditStreamProcessor (data, tools, topic) {
   /*
    * Hand over to module-specific logic
    */
-  if (data?.morio?.module && typeof modules[data.morio.module] === 'function') {
+  const module = tools.get(data,['labels', 'morio.module'], false)
+  if (module && typeof modules[module] === 'function') {
     /*
      * Hand of to module-specific code to determine what to do
      */
-    const result = modules[data.morio.module](data, tools)
+    const result = modules[module](data, tools)
 
     /*
      * Only update if we get data back from the module code
      */
     if (result) tools.cache.audit(result)
   }
-  else if (config.log_unhandled) {
-    tools.note(`[metrics] Cannot handle message`, data)
+  else if (tools.getSettings('tap.processors.audit.log_unhandled', false)) {
+    tools.note(`[audit] Cannot process message`, data)
   }
-
+  else tools.log.debug(`[audit] No module for: ${module}`)
 }
 
 /*
  * This is used for both the UI and to generate the default settings
  */
 export const info = {
-  title: 'Audit data stream processor',
-  about: `This stream processor will process audit data flowing through your Morio collection.
+  info: `This stream processor will process audit data flowing through your Morio collection.
 
 It can cache recent audit events, as well as enventify them for event-driven automation.
 It also supports dynamic loading of module-specific logic.`,
   settings: {
-    enabled: {
-      title: 'Enable audit stream processor',
-      dflt: true,
-      type: 'list',
-      list: [
-        {
-          val: false,
-          label: 'Disabled'
-        },
-        {
-          val: true,
-          label: 'Enabled'
-        },
-      ]
-    },
-    topics: {
-      dflt: ['audit'],
-      title: 'List of topics to subscribe to',
-      about: 'FIXME - description goes here',
-      type: 'labels',
-    },
+    topics: ['audit'],
     cache: {
       dflt: true,
       title: 'Cache audit data',
@@ -106,6 +86,22 @@ It also supports dynamic loading of module-specific logic.`,
       dflt: 2,
       title: 'fixme',
       type: 'number'
+    },
+    log_unhandled: {
+      dflt: false,
+      title: 'Log unhandled audit data',
+      type: 'list',
+      list: [
+        {
+          val: false,
+          label: 'Do not log unhandled audit data (disable)',
+        },
+        {
+          val: true,
+          label: 'Log unhandled audit data',
+          about: 'This allows you to see the kind of audit data that is not being treated by this stream processor. It is intended as a debug tool for stream processor developers and will generate a lot of notes.'
+        },
+      ],
     },
   }
 }

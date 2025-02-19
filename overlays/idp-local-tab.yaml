@@ -1,16 +1,13 @@
-{{#MORIO_DOCS}}
-title: Morio Local Identity Provider (as tab)
-about: |-
-  A moriod overlay to enable the `local` identity provider.
+merge: 
+  iam:
+    providers:
+      local:
+        label: Morio Account
+        provider: local
+    ui:
+      visibility:
+        local: tab
 
-  This will show this identity provider as a tab on the sign in form.
-{{/MORIO_DOCS}}
-
-{{^MORIO_DOCS}}
-iam.providers.local:
-  provider: local
-  id: local
-  label: Morio Account
-iam.ui.visibility.local: tab
-{{/MORIO_DOCS}}
+moriodata: 
+  info: "Enables the Local identity provider as a tab on the login screen"
 

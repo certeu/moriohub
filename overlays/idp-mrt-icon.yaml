@@ -1,0 +1,13 @@
+merge:
+  iam:
+    providers:
+      mrt:
+        label: Morio Root Token
+        provider: mrt
+    ui:
+      visibility:
+        mrt: icon
+
+moriodata: 
+  info: "Enables the Morio Root Token provider behind an icon on the login screen"
+

@@ -1,16 +1,13 @@
-{{#MORIO_DOCS}}
-title: API Key Identity Provider
-about: |-
-  A moriod overlay to enable the `apikey` identity provider.
+merge:
+  iam:
+    providers:
+      apikey:
+        label: API Key
+        provider: apikey
+  ui:
+    visibility:
+      apikey: icon
 
-  This will hide this identity provider behind an icon on the sign in form.
-{{/MORIO_DOCS}}
-
-{{^MORIO_DOCS}}
-iam.providers.apikey:
-  provider: apikey
-  id: apikey
-  label: API Key
-iam.ui.visibility.apikey: icon
-{{/MORIO_DOCS}}
+moriodata: 
+  info: "Enables the API Key identity provider for Morio"
 

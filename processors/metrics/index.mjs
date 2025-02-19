@@ -17,60 +17,46 @@ export default function metricsStreamProcessor (data, tools, topic) {
   /*
    * Hand over to module-specific logic
    */
-  if (data?.morio?.module && typeof modules[data.morio.module] === 'function') {
+  const module = tools.get(data,['labels', 'morio.module'], false)
+  if (module && typeof modules[module] === 'function') {
     let result
     try {
-      result = modules[data.morio.module](data, tools)
-      if (result) tools.cache.metricset(result, data, config)
+      result = modules[module](data, tools)
+      if (!result) return
+      else if (Array.isArray(result) && result.length === 2 && typeof result[0] === 'string') {
+        tools.cache.metricset(result[0], result[1], data, tools.getSettings('tap.metrics', {}))
+      }
+      else tools.note(`[metrics] Returned data was invalid`, result)
     }
     catch(err) {
-      tools.note(`[metrics] Error in module logic`, { err, data })
+      tools.note(`[metrics] Error in module logic`, { err, result, data })
     }
   }
-  else if (config.log_unhandled) {
-    tools.note(`[metrics] Cannot handle message`, data)
+  else if (tools.getSettings('tap.metrics.log_unhandled', false)) {
+    tools.note(`[metrics] Cannot process message (${module})`, {data, modules: Object.keys(modules)})
   }
 
   /*
    * Metricset: throughput
    */
-  //if (data.metricset?.name === 'throughput') tools.cache.metricset(data.morio.tap.throughput, data, config)
+  //if (data.metricset?.name === 'throughput') tools.cache.metricset(data.morio.tap.throughput, data, tools.getSettings('tap.metrics', {}))
 }
+
+/*
+ * Give this processor an id so we can use that in the logs
+ */
+metricsStreamProcessor.id = 'metrics'
 
 /*
  * This is used for both the UI and to generate the default settings
  */
 export const info = {
-  docs: 'https://morio.it/docs/FIXME',
-  title: 'Metrics stream processor',
-  about: `This stream processor will process metrics data flowing through your Morio collector.
+  info: `This stream processor will process metrics data flowing through your Morio collector.
 
-It can cache recent metrics, as well as enventify them for event-driven automation.
+It can cache recent metrics as well as eventify them for event-driven automation.
 It also supports dynamic loading of module-specific logic.`,
   settings: {
-    enabled: {
-      title: 'Enable metrics stream processor',
-      dflt: true,
-      type: 'list',
-      list: [
-        {
-          val: false,
-          label: 'Disabled',
-          about: 'Select this to completely disabled this stream processor',
-        },
-        {
-          val: true,
-          label: 'Enabled',
-          about: 'Select this to enable this stream processor',
-        },
-      ]
-    },
-    topics: {
-      dflt: ['metrics'],
-      title: 'List of topics to subscribe to',
-      about: `Changing this from the default \`metrics\` is risky`,
-      type: 'labels',
-    },
+    topics: ['metrics'],
     cache: {
       dflt: true,
       title: 'Cache metrics data',
@@ -113,6 +99,22 @@ It also supports dynamic loading of module-specific logic.`,
           val: true,
           label: 'Auto-create events based on metrics',
           about: 'Eventifying metrics allows for event-driven automation and monitoring based on audit information',
+        },
+      ],
+    },
+    log_unhandled: {
+      dflt: false,
+      title: 'Log unhandled metrics data',
+      type: 'list',
+      list: [
+        {
+          val: false,
+          label: 'Do not log unhandled metrics data (disable)',
+        },
+        {
+          val: true,
+          label: 'Log unhandled metrics data',
+          about: 'This allows you to see the kind of metrics data that is not being treated by this stream processor. It is intended as a debug tool for stream processor developers and will generate a lot of notes.'
         },
       ],
     },

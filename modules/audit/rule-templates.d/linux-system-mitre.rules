@@ -1,0 +1,274 @@
+# Rules for Auditbeat that are mapped to MITRE's Attack Framework
+# This is based on the work by Wouter Stinkens, see:
+# https://github.com/NVISOsecurity/ansible-auditbeat
+
+#######################################################################
+# Filter out things we do not care about
+# These need to go at the top since the first match wins
+#######################################################################
+
+## Ignore End Of Event messages (EOE)
+-a always,exclude -F msgtype=EOE
+
+## Filter out cron jobs
+-a never,user -F subj_type=crond_t
+-a exit,never -F subj_type=crond_t
+
+{|#LINUX_SYSTEM_HYPERVISOR_VMWARE|}
+## Filter out VMWare tools
+-a exit,never -F arch=b32 -S fork -F success=0 -F path=/usr/lib/vmware-tools -F subj_type=initrc_t -F exit=-2
+-a exit,never -F arch=b64 -S fork -F success=0 -F path=/usr/lib/vmware-tools -F subj_type=initrc_t -F exit=-2
+{|/LINUX_SYSTEM_HYPERVISOR_VMWARE|}
+
+
+#######################################################################
+# Rules | The good stuff starts here
+# -w is a file watch rule, -a is a syscall rule
+#######################################################################
+
+## Changes to kernel modules
+-w /etc/sysctl.conf -p wa -k sysctl
+-a always,exit -F perm=x -F auid!=-1 -F path=/sbin/insmod{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1215_Kernel_Modules_and_Extensions{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F perm=x -F auid!=-1 -F path=/sbin/modprobe{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1215_Kernel_Modules_and_Extensions{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F perm=x -F auid!=-1 -F path=/sbin/rmmod{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1215_Kernel_Modules_and_Extensions{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S finit_module -S init_module -S delete_module -F auid!=-1{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1215_Kernel_Modules_and_Extensions{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S finit_module -S init_module -S delete_module -F auid!=-1{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1215_Kernel_Modules_and_Extensions{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/modprobe.conf -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1215_Kernel_Modules_and_Extensions{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Changes to time
+-a exit,always -F arch=b32 -S adjtimex -S settimeofday -S clock_settime{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1099_Timestomp{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a exit,always -F arch=b64 -S adjtimex -S settimeofday -S clock_settime{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1099_Timestomp{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S clock_settime{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1099_Timestomp{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S clock_settime{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1099_Timestomp{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/localtime -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1099_Timestomp{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Changes to accounts/users
+-w /etc/sudoers -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/passwd -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/sbin/groupadd -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/sbin/groupmod -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/sbin/addgroup -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/sbin/useradd -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/sbin/usermod -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/sbin/adduser -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Changes to cron
+-w /etc/cron.allow -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/cron.deny -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/cron.d/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/cron.daily/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/cron.hourly/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/cron.monthly/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/cron.weekly/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/crontab -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /var/spool/cron/crontabs/{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/inittab -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/init.d/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/init/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/at.allow -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/at.deny -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /var/spool/at/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/anacrontab -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1168_Local_Job_Scheduling{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## The usual suspects for elevated privilege commands
+-a exit,always -F arch=b64 -F euid=0 -S execve{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a exit,always -F arch=b32 -F euid=0 -S execve{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/sbin/userdel -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/bin/ping -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/bin/umount -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/bin/mount -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/bin/su -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/bin/chgrp -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/bin/ping6 -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/sbin/pam_timestamp_check -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/sbin/unix_chkpwd -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/sbin/pwck -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/sbin/suexec -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/sbin/usermod -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/sbin/newusers -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/sbin/groupdel -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/sbin/semanage -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/sbin/usernetctl -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/sbin/ccreds_validate -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/sbin/userhelper -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/Xorg -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/rlogin -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/sudoedit -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/at -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/rsh -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/gpasswd -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/kgrantpty -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/crontab -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/sudo -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/staprun -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/rcp -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/passwd -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/chsh -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/chfn -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/chage -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/setfacl -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/chacl -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/chcon -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/newgrp -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/newrole -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F path=/usr/bin/kpac_dhcp_helper -F perm=x -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1078_Valid_Accounts{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Media export
+-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1052_Exfiltration_Over_Physical_Medium{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S mount -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1052_Exfiltration_Over_Physical_Medium{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Sessions
+-w /var/run/utmp -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1108_Redundant_Access{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /var/log/wtmp -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1108_Redundant_Access{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /var/log/btmp -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1108_Redundant_Access{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Logins
+-w /var/log/faillog -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1021_Remote_Services{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /var/log/lastlog -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1021_Remote_Services{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /var/log/tallylog -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1021_Remote_Services{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Pam events
+-w /etc/pam.d/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1071_Standard_Application_Layer_Protocol{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/security/limits.conf -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1071_Standard_Application_Layer_Protocol{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/security/pam_env.conf -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1071_Standard_Application_Layer_Protocol{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/security/namespace.conf -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1071_Standard_Application_Layer_Protocol{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/security/namespace.init -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1071_Standard_Application_Layer_Protocol{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/pam.d/common-password -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1201_Password_Policy_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Changes to SSH config
+-w /etc/ssh/sshd_config -k{|#LINUX_SYSTEM_AUDIT_MITRE|} T1021_Remote_Services{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+#Log 64 bit processes (a2!=6e filters local unix socket calls)
+-a exit,always -F arch=b64 -S connect -F a2!=110 -k{|#LINUX_SYSTEM_AUDIT_MITRE|} T1043_Commonly_Used_Port{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+#Log 32 bit processes (a0=3 means only outbound sys_connect calls)
+-a exit,always -F arch=b32 -S socketcall -F a0=3 -k{|#LINUX_SYSTEM_AUDIT_MITRE|} T1043_Commonly_Used_Port{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Privilege escalation
+-w /bin/su -p x -k{|#LINUX_SYSTEM_AUDIT_MITRE|} T1169_Sudo{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/sudo -p x -k{|#LINUX_SYSTEM_AUDIT_MITRE|} T1169_Sudo{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/sudoers -p rw -k{|#LINUX_SYSTEM_AUDIT_MITRE|} T1169_Sudo{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F dir=/home -F uid=0 -F auid>=1000 -F auid!=4294967295 -C auid!=obj_uid{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1169_Sudo{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S chmod -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S chown -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S fchmod -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S fchmodat -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S fchown -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S fchownat -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S fremovexattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S fsetxattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S lchown -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S lremovexattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S lsetxattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S removexattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S setxattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S chmod  -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S chown -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S fchmod -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S fchmodat -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S fchown -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S fchownat -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S fremovexattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S fsetxattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S lchown -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S lremovexattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S lsetxattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S removexattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S setxattr -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -C auid!=uid -S execve{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -C auid!=uid -S execve{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S setuid -S setgid -S setreuid -S setregid{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S setuid -S setgid -S setreuid -S setregid{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S setuid -S setgid -S setreuid -S setregid{|#LINUX_SYSTEM_AUDIT_MITRE|} -F exit=EPERM -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S setuid -S setgid -S setreuid -S setregid{|#LINUX_SYSTEM_AUDIT_MITRE|} -F exit=EPERM -k T1166_Seuid_and_Setgid{|/LINUX_SYSTEM_AUDIT_MITRE|}
+ -w /usr/bin/ -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1068_Exploitation_for_Privilege_Escalation{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Common discovery/recon commands
+-w /etc/group -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1087_Account_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/passwd -p wa{|#LINUX_SYSTEM_AUDIT_MITRE|} -k TT1087_Account_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/gshadow{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1087_Account_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/shadow{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1087_Account_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/security/opasswd{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1087_Account_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/sbin/nologin{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1087_Account_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /sbin/nologin{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1087_Account_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/whoami{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1033_System_Owner_User_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/hostname{|#LINUX_SYSTEM_AUDIT_MITRE|} -p r -k T1082_System_Information_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /sbin/iptables{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1082_System_Information_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /sbin/ifconfig{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1082_System_Information_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/login.defs{|#LINUX_SYSTEM_AUDIT_MITRE|} -p wa -k T1082_System_Information_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/resolv.conf{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1016_System_Network_Configuration_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/hosts.allow{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1016_System_Network_Configuration_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/hosts.deny{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1016_System_Network_Configuration_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/securetty{|#LINUX_SYSTEM_AUDIT_MITRE|} -p wa -k T1082_System_Information_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /var/log/faillog{|#LINUX_SYSTEM_AUDIT_MITRE|} -p wa -k T1082_System_Information_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /var/log/lastlog{|#LINUX_SYSTEM_AUDIT_MITRE|} -p wa -k T1082_System_Information_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /var/log/tallylog{|#LINUX_SYSTEM_AUDIT_MITRE|} -p wa -k T1082_System_Information_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/sbin/tcpdump{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1049_System_Network_Connections_discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/sbin/traceroute{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1049_System_Network_Connections_discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/wireshark{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1049_System_Network_Connections_discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/rawshark{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1049_System_Network_Connections_discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/grep{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1081_Credentials_In_Files{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/egrep{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1081_Credentials_In_Files{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/ps{|#LINUX_SYSTEM_AUDIT_MITRE|} -p x -k T1057_Process_Discovery{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Data Copy(Local)
+#-w /usr/bin/cp -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1005_Data_from_Local_System{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/dd -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1005_Data_from_Local_System{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Remote access
+-w /usr/bin/wget -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1219_Remote_Access_Tools{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/curl -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1219_Remote_Access_Tools{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/base64 -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1219_Remote_Access_Tools{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /bin/nc -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1219_Remote_Access_Tools{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /bin/netcat -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1219_Remote_Access_Tools{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/ncat -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1219_Remote_Access_Tools{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/ssh -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1219_Remote_Access_Tools{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/socat -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1219_Remote_Access_Tools{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/rdesktop -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1219_Remote_Access_Tools{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/ftp -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1105_remote_file_copy{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Software
+# RPM (Redhat/CentOS)
+-w /usr/bin/rpm -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/yum -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+# YAST/Zypper/RPM (SuSE)
+-w /sbin/yast -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /sbin/yast2 -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /bin/rpm -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/zypper{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+# DPKG / APT-GET (Debian/Ubuntu)
+-w /usr/bin/dpkg -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/apt-add-repository -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/apt-get -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /usr/bin/aptitude -p x{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1072_third_party_software{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Code injection
+-a always,exit -F arch=b32 -S ptrace{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1055_Process_Injection{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S ptrace{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1055_Process_Injection{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S ptrace{|#LINUX_SYSTEM_AUDIT_MITRE|} -F a0=0x4 -k T1055_Process_Injection{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S ptrace{|#LINUX_SYSTEM_AUDIT_MITRE|} -F a0=0x4 -k T1055_Process_Injection{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S ptrace{|#LINUX_SYSTEM_AUDIT_MITRE|} -F a0=0x5 -k T1055_Process_Injection{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S ptrace{|#LINUX_SYSTEM_AUDIT_MITRE|} -F a0=0x5 -k T1055_Process_Injection{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S ptrace{|#LINUX_SYSTEM_AUDIT_MITRE|} -F a0=0x6 -k T1055_Process_Injection{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S ptrace{|#LINUX_SYSTEM_AUDIT_MITRE|} -F a0=0x6 -k T1055_Process_Injection{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## Shell configuration
+-w /etc/profile.d/{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1156_bash_profile_and_bashrc{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/profile{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1156_bash_profile_and_bashrc{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/shells{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1156_bash_profile_and_bashrc{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/bashrc{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1156_bash_profile_and_bashrc{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/csh.cshrc{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1156_bash_profile_and_bashrc{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-w /etc/csh.login{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1156_bash_profile_and_bashrc{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+## File Deletion by User Related Events
+-a always,exit -F arch=b32 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1107_File_Deletio{|/LINUX_SYSTEM_AUDIT_MITRE|}n
+-a always,exit -F arch=b64 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid>=500 -F auid!=4294967295{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1107_File_Deletion{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b32 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid=0{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1070_Indicator_Removal_on_Host{|/LINUX_SYSTEM_AUDIT_MITRE|}
+-a always,exit -F arch=b64 -S rmdir -S unlink -S unlinkat -S rename -S renameat -F auid=0{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1070_Indicator_Removal_on_Host{|/LINUX_SYSTEM_AUDIT_MITRE|}
+
+#Log all commands (Be careful, this will generate a lot of data)
+#-a exit,always -F arch=b64 -S execve{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1059_CommandLine_Interface{|/LINUX_SYSTEM_AUDIT_MITRE|}
+#-a exit,always -F arch=b32 -S execve{|#LINUX_SYSTEM_AUDIT_MITRE|} -k T1059_CommandLine_Interface{|/LINUX_SYSTEM_AUDIT_MITRE|}
+

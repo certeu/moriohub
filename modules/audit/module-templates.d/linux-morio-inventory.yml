@@ -1,0 +1,21 @@
+- moriodata:
+    info: "Auditbeat settings to build out an inventory of your infrastructure"
+    href: "https://github.com/certeu/moriohub/blob/develop/modules/audit/module-templates.d/linux-morio-inventory.yml"
+    vars:
+      LINUX_MORIO_INVENTORY_INTERVAL:
+        dflt: 4h
+        info: The interval to use for collecting inventory data
+
+- module: system
+  datasets:
+    - host
+    - package
+  period: {| LINUX_MORIO_INVENTORY_INTERVAL |}
+  state.period: 6h
+  login.wtmp_file_pattern: /var/log/wtmp*
+  login.btmp_file_pattern: /var/log/btmp*
+  user.detect_password_changes: true
+  processors:
+    - add_locale:
+        format: abbreviation
+

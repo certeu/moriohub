@@ -1,47 +1,22 @@
-{{#MORIO_DOCS}}
-about: |-
-  A filebeat module for Linux systems
+- moriodata:
+    info: "Collects access and error log data from the Apache 2.x HTTP Server on Linux systems"
+    href: "https://morio.it/hub/modules/linux-apache2"
+    vars:
+      LOGS_LINUX_APACHE2_ACCESS_LOG_PATHS:
+        dflt:
+          - /var/log/apache2/*access*.log
+        info: A (glob) list of paths from which to collect Apache access logs
+      LOGS_LINUX_APACHE2_ERROR_LOG_PATHS:
+        dflt:
+          - /var/log/apache2/*error*.log
+        info: A (glob) list of paths from which to collect Apache error logs
+    version: 1
 
-  This collects access and error log data from the Apache 2.x HTTP Server.
-  It autodetects and supports the following log file formats:
-
-  - access: common
-  - access: combined
-  - access: vhost_combined
-  - error: default (without client IP)
-
-vars:
-  defaults:
-    MORIO_APACHE_ACCESS_LOGS_PATHS: "['/var/log/apache2/*access*.log']"
-    MORIO_APACHE_ERROR_LOGS_PATHS: "['/var/log/apache2/*error*.log']"
-    MORIO_APACHE_SPLUNK_INDEX_NAME: false
-  local:
-    MORIO_APACHE_ACCESS_LOGS_PATHS: A (glob) list of paths from which to collect Apache access logs
-    MORIO_APACHE_ERROR_LOGS_PATHS: A (glob) list of paths from which to collect Apache error logs
-    MORIO_APACHE_SPLUNK_INDEX_NAME: If the logs are to be sent to a Splunk ecosystem, you can set this Morio variable to add a `splunk.index` field to the data, with the value of the variable.
-
-{{/MORIO_DOCS}}
-
-{{^MORIO_DOCS}}
-
-- type: filestream # This collects all Apache error logs
+# This collects all Apache error logs
+- type: filestream
   id: apache2_error
-  paths: {{{MORIO_APACHE_ERROR_LOGS_PATHS}}}
-
+  paths: {|{ LOGS_LINUX_APACHE2_ERROR_LOG_PATHS }|}
   processors:
-    - add_fields:
-        target: morio
-        fields:
-          module: {{MORIO_MODULE_NAME}}
-    - add_fields:
-        target: morio
-        fields:
-          module_version: "AE-AA"
-    - add_fields:
-        target: host
-        fields:
-          id: {{MORIO_CLIENT_UUID}}
-    - add_id: null
     - if:
         regexp:
           message: '^\[.+\]\s\[.+\]\s\[.*\sAH[0-9]{5}:.*' # default ErrorLogFormat
@@ -53,10 +28,9 @@ vars:
             ignore_missing: true
             ignore_failure: true
             overwrite_keys: true
-        - add_fields:
-            target: log
-            fields:
-              detected_format: "default"
+        - add_labels:
+            labels:
+              log.format: "default"
 
     - timestamp:
         field: temp_timestamp
@@ -66,39 +40,12 @@ vars:
     - drop_fields:
         fields: temp_timestamp
 
-    {{#MORIO_APACHE_SPLUNK_INDEX_NAME}}
-    - add_fields:
-        target: splunk
-        fields:
-          index: {{MORIO_APACHE_SPLUNK_INDEX_NAME}}
-    {{/MORIO_APACHE_SPLUNK_INDEX_NAME}}
-
-
-- type: filestream # This collects all Apache access logs
+# This collects all Apache access logs
+- type: filestream
   id: apache2_access
-  paths: {{{MORIO_APACHE_ACCESS_LOGS_PATHS}}}
+  paths: {|{ LOGS_LINUX_APACHE2_ACCESS_LOG_PATHS }|}
 
   processors:
-    - add_fields:
-        target: morio
-        fields:
-          module: {{MORIO_MODULE_NAME}}
-    - add_fields:
-        target: morio
-        fields:
-          module_version: "AL-AW"
-    - add_fields:
-        target: host
-        fields:
-          id: {{MORIO_CLIENT_UUID}}
-
-    - add_fields:
-        target: host
-        fields:
-          id: {{MORIO_CLIENT_UUID}}
-
-    - add_id: null
-
     - if:
         regexp:
           message: '^\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3} .+ \d+ \d+$' # LogFormat common
@@ -114,10 +61,9 @@ vars:
                 ignore_missing: true
                 ignore_failure: true
                 overwrite_keys: true
-            - add_fields:
-                target: log
-                fields:
-                  detected_format: "common"
+            - add_labels:
+                labels:
+                  log.format: "common"
           else:
             - dissect:
                 field: "message"
@@ -126,10 +72,9 @@ vars:
                 ignore_missing: true
                 ignore_failure: true
                 overwrite_keys: true
-            - add_fields:
-                target: log
-                fields:
-                  detected_format: "common_incomplete"
+            - add_labels:
+                labels:
+                  log.format: "common_incomplete"
 
     - if:
         regexp:
@@ -146,10 +91,9 @@ vars:
                 ignore_missing: true
                 ignore_failure: true
                 overwrite_keys: true
-            - add_fields:
-                target: log
-                fields:
-                  detected_format: "combined"
+            - add_labels:
+                labels:
+                  log.format: "combined"
           else:
             - dissect:
                 field: "message"
@@ -158,10 +102,9 @@ vars:
                 ignore_missing: true
                 ignore_failure: true
                 overwrite_keys: true
-            - add_fields:
-                target: log
-                fields:
-                  detected_format: "combined_incomplete"
+            - add_labels:
+                labels:
+                  log.format: "combined_incomplete"
 
     - if:
         regexp:
@@ -178,10 +121,9 @@ vars:
                 ignore_missing: true
                 ignore_failure: true
                 overwrite_keys: true
-            - add_fields:
-                target: log
-                fields:
-                  detected_format: "vhost_combined"
+            - add_labels:
+                labels:
+                  log.format: "vhost_combined"
           else:
             - dissect:
                 field: "message"
@@ -190,10 +132,9 @@ vars:
                 ignore_missing: true
                 ignore_failure: true
                 overwrite_keys: true
-            - add_fields:
-                target: log
-                fields:
-                  detected_format: "vhost_combined_incomplete"
+            - add_labels:
+                labels:
+                  log.format: "vhost_combined_incomplete"
 
     - timestamp:
         field: temp_timestamp
@@ -201,13 +142,4 @@ vars:
           - '02/Jan/2006:15:04:05 -0700'
     - drop_fields:
         fields: temp_timestamp
-
-    {{#MORIO_APACHE_SPLUNK_INDEX_NAME}}
-    - add_fields:
-        target: splunk
-        fields:
-          index: {{MORIO_APACHE_SPLUNK_INDEX_NAME}}
-    {{/MORIO_APACHE_SPLUNK_INDEX_NAME}}
-
-{{/MORIO_DOCS}}
 

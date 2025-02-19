@@ -1,16 +1,13 @@
-{{#MORIO_DOCS}}
-title: Morio Local Identity Provider (as icon)
-about: |-
-  A moriod overlay to enable the `local` identity provider.
+merge:
+  iam:
+    providers:
+      local:
+        label: Morio Account
+        provider: local
+    ui:
+      visibility:
+        local: icon
 
-  This will hide this identity provider behind an icon on the sign in form.
-{{/MORIO_DOCS}}
-
-{{^MORIO_DOCS}}
-iam.providers.local:
-  provider: local
-  id: local
-  label: Morio Account
-iam.ui.visibility.local: icon
-{{/MORIO_DOCS}}
+moriodata: 
+  info: "Enables the Local identity provider behind an icon on the login screen"
 
