@@ -1,117 +1,129 @@
-{{#MORIO_DOCS}}
-about: |-
-  A filebeat module for Linux systems
+- moriodata:
+    info: "Collects log data from Tomcat on Linux systems"
+    href: "https://morio.it/hub/modules/logs/linux-tomcat"
+    vars:
+      LOGS_LINUX_TOMCAT_ACCESS_LOG_PATHS:
+        dflt:
+          - /usr/local/tomcat/logs/*access*.log
+        info: A list of (glob) paths from which to collect Apache Tomcat access logs
+      LOGS_LINUX_TOMCAT_CATALINA_LOG_PATHS:
+        dflt:
+          - /usr/local/tomcat/logs/catalina*.log
+        info: A list of (glob) paths from which to collect Apache Tomcat catalina logs
+      LOGS_LINUX_TOMCAT_CATALINA_OUT_PATHS:
+        dflt:
+          - /usr/local/tomcat/logs/catalina.out
+        info: A list of (glob) paths from which to collect the Apache Tomcat catalina.out messages
+    version: 1
 
-  This collects access and error log data from the Apache Tomcat package.
-  It autodetects and supports the following log file types and formats:
-
-  - access: access log files using the default Tomcat single line logging pattern
-  - catalina: operations log files using the default Catalina multiline logging pattern
-
-vars:
-  defaults:
-    MORIO_TOMCAT_ACCESS_LOGS_PATHS: "['/usr/local/tomcat/logs/*access*.log']"
-    MORIO_TOMCAT_CATALINA_LOGS_PATHS: "['/usr/local/tomcat/logs/catalina*.log']"
-    MORIO_TOMCAT_SPLUNK_INDEX_NAME: false
-  local:
-    MORIO_TOMCAT_ACCESS_LOGS_PATHS: A (glob) list of paths from which to collect Apache Tomcat access logs
-    MORIO_TOMCAT_CATALINA_LOGS_PATHS: A (glob) list of paths from which to collect Apache Tomcat catalina logs
-    MORIO_TOMCAT_SPLUNK_INDEX_NAME: If the logs are to be sent to a Splunk ecosystem, you can set this Morio variable to add a `splunk.index` field to the data, with the value of the variable.
-
-{{/MORIO_DOCS}}
-
-{{^MORIO_DOCS}}
-
-
-- type: filestream # This collects catalina logs
-  id: tomcat_catalina_default
-  paths: {{{MORIO_TOMCAT_CATALINA_LOGS_PATHS}}}
-
+# This collects catalina logs
+- type: filestream
+  id: tomcat_catalina_logs
+  paths: {{{ LOGS_LINUX_TOMCAT_CATALINA_LOG_PATHS }}}
   parsers:
     - multiline:
         type: pattern
         pattern: '^\d{2}-[a-zA-Z]{3}-\d{4}'
         negate: true
         match: after
-
   processors:
-    - add_fields:
-        target: morio
-        fields:
-          module: {{MORIO_MODULE_NAME}}
-          module_version: "TC-AC"
-    - add_fields:
-        target: host
-        fields:
-          id: {{MORIO_CLIENT_UUID}}
-    - add_id: null
-
     - dissect:
         field: "message"
-        tokenizer: "%{+timestamp} %{+timestamp} %{log.level} [%{http.thread}] %{log.logger} %{event.message}"
+        tokenizer: "%{+temp_timestamp} %{+temp_timestamp} %{log.level} [%{http.thread}] %{log.logger} %{event.message}"
         target_prefix: ''
         ignore_missing: true
         ignore_failure: true
         overwrite_keys: true
-    - add_fields:
-        target: log
-        fields:
-          detected_format: "catalina_default"
-
     - timestamp:
-        field: timestamp
+        field: temp_timestamp
         layouts:
           - '02-Jan-2006 15:04:05.999'
         timezone: Local
+    - add_labels:
+        labels:
+          log.format: 'catalina*.log'
+    - drop_fields:
+        fields: temp_timestamp
 
-
-- type: filestream # This collects access logs
-  id: tomcat_access_default
-  paths: {{{MORIO_TOMCAT_ACCESS_LOGS_PATHS}}}
-
+# This collects catalina.out logs
+- type: filestream
+  id: tomcat_catalina_out
+  paths: {{{ LOGS_LINUX_TOMCAT_CATALINA_OUT_PATHS }}}
+  parsers:
+    - multiline:
+        type: pattern
+        pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}|^\d{2}-[a-zA-Z]{3}-\d{4}'
+        negate: true
+        match: after
   processors:
-    - add_fields:
-        target: morio
-        fields:
-          module: {{MORIO_MODULE_NAME}}
-    - add_fields:
-        target: morio
-        fields:
-          module_version: "TA-AC"
-    - add_fields:
-        target: host
-        fields:
-          id: {{MORIO_CLIENT_UUID}}
-    - add_id: null
+    - if:
+        regexp:
+            message: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}' 
+      then:
+        # It's 2006-01-02 15:04:05,999
+        - if:
+            regexp:
+                message: ' \[[\w-]+\] \[[\w\.]+\] '
+          then:
+            - dissect:
+                field: "message"
+                tokenizer: "%{+temp_timestamp} %{+temp_timestamp} %{log.level} [%{http.thread}] [%{log.logger}] %{event.message}"
+                target_prefix: ''
+                ignore_missing: true
+                ignore_failure: true
+                overwrite_keys: true
+          else:
+            - dissect:
+                field: "message"
+                tokenizer: "%{+temp_timestamp} %{+temp_timestamp} %{log.logger}:%{http.thread} %{log.level} %{event.message}"
+                target_prefix: ''
+                ignore_missing: true
+                ignore_failure: true
+                overwrite_keys: true
+      else:
+        # We assume it's 02-Jan-2006 15:04:05.999
+        - dissect:
+            field: "message"
+            tokenizer: "%{+temp_timestamp} %{+temp_timestamp} %{log.level} [%{http.thread}] %{log.logger} %{event.message}"
+            target_prefix: ''
+            ignore_missing: true
+            ignore_failure: true
+            overwrite_keys: true
+    - timestamp:
+        field: temp_timestamp
+        layouts:
+          - '2006-01-02 15:04:05,999'
+          - '02-Jan-2006 15:04:05.999'
+        timezone: Local
+    - add_labels:
+        labels:
+          log.format: 'catalina.out'
+    - drop_fields:
+        fields: temp_timestamp
 
-
+# This collects access logs
+- type: filestream
+  id: tomcat_access_default
+  paths: {{{ LOGS_LINUX_TOMCAT_ACCESS_LOG_PATHS }}}
+  processors:
     - if:
         regexp:
             message: '^\[\d{2}\/[a-zA-Z]{3}\/\d{4}:\d{2}:\d{2}:\d{2}\s.\d{4}\]\s' # access log valve default logging pattern
       then:
         - dissect:
             field: "message"
-            tokenizer: "[%{timestamp}] %{http.username} %{http.thread} %{source.ip} %{http.request.method} %{url.full} %{http.version} %{http.response.status_code} %{http.response.time} %{http.response.body.bytes} %{http.request.referrer} %{user_agent.original}"
+            tokenizer: "[%{temp_timestamp}] %{http.username} %{http.thread} %{source.ip} %{http.request.method} %{url.full} %{http.version} %{http.response.status_code} %{http.response.time} %{http.response.body.bytes} %{http.request.referrer} %{user_agent.original}"
             target_prefix: ''
             ignore_missing: true
             ignore_failure: true
             overwrite_keys: true
-        - add_fields:
-            target: log
-            fields:
-              detected_format: "access_default"
-
+        - add_labels:
+            labels:
+              log.format: 'access_default'
     - timestamp:
-        field: timestamp
+        field: temp_timestamp
         layouts:
           - '02/Jan/2006:15:04:05 -0700'
-
-    {{#MORIO_TOMCAT_SPLUNK_INDEX_NAME}}
-    - add_fields:
-        target: splunk
-        fields:
-          index: {{MORIO_TOMCAT_SPLUNK_INDEX_NAME}}
-    {{/MORIO_TOMCAT_SPLUNK_INDEX_NAME}}
-
-{{/MORIO_DOCS}}
+    - drop_fields:
+        fields: temp_timestamp
 
