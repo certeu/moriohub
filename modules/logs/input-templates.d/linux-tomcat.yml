@@ -10,15 +10,12 @@
         dflt:
           - /usr/local/tomcat/logs/catalina*.log
         info: A list of (glob) paths from which to collect Apache Tomcat catalina logs
-      LOGS_LINUX_TOMCAT_CATALINA_OUT_PATHS:
-        dflt:
-          - /usr/local/tomcat/logs/catalina.out
-        info: A list of (glob) paths from which to collect the Apache Tomcat catalina.out messages
     version: 1
+
 
 # This collects catalina logs
 - type: filestream
-  id: tomcat_catalina_logs
+  id: tomcat_catalina_default
   paths: {|{ LOGS_LINUX_TOMCAT_CATALINA_LOG_PATHS }|}
   parsers:
     - multiline:
@@ -26,7 +23,9 @@
         pattern: '^\d{2}-[a-zA-Z]{3}-\d{4}'
         negate: true
         match: after
+
   processors:
+
     - dissect:
         field: "message"
         tokenizer: "%{+temp_timestamp} %{+temp_timestamp} %{log.level} [%{http.thread}] %{log.logger} %{event.message}"
@@ -34,78 +33,23 @@
         ignore_missing: true
         ignore_failure: true
         overwrite_keys: true
+
     - timestamp:
         field: temp_timestamp
         layouts:
           - '02-Jan-2006 15:04:05.999'
         timezone: Local
-    - add_labels:
-        labels:
-          log.format: 'catalina*.log'
     - drop_fields:
         fields: temp_timestamp
 
-# This collects catalina.out logs
-- type: filestream
-  id: tomcat_catalina_out
-  paths: {|{ LOGS_LINUX_TOMCAT_CATALINA_OUT_PATHS }|}
-  parsers:
-    - multiline:
-        type: pattern
-        pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}|^\d{2}-[a-zA-Z]{3}-\d{4}'
-        negate: true
-        match: after
-  processors:
-    - if:
-        regexp:
-            message: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}' 
-      then:
-        # It's 2006-01-02 15:04:05,999
-        - if:
-            regexp:
-                message: ' \[[\w-]+\] \[[\w\.]+\] '
-          then:
-            - dissect:
-                field: "message"
-                tokenizer: "%{+temp_timestamp} %{+temp_timestamp} %{log.level} [%{http.thread}] [%{log.logger}] %{event.message}"
-                target_prefix: ''
-                ignore_missing: true
-                ignore_failure: true
-                overwrite_keys: true
-          else:
-            - dissect:
-                field: "message"
-                tokenizer: "%{+temp_timestamp} %{+temp_timestamp} %{log.logger}:%{http.thread} %{log.level} %{event.message}"
-                target_prefix: ''
-                ignore_missing: true
-                ignore_failure: true
-                overwrite_keys: true
-      else:
-        # We assume it's 02-Jan-2006 15:04:05.999
-        - dissect:
-            field: "message"
-            tokenizer: "%{+temp_timestamp} %{+temp_timestamp} %{log.level} [%{http.thread}] %{log.logger} %{event.message}"
-            target_prefix: ''
-            ignore_missing: true
-            ignore_failure: true
-            overwrite_keys: true
-    - timestamp:
-        field: temp_timestamp
-        layouts:
-          - '2006-01-02 15:04:05,999'
-          - '02-Jan-2006 15:04:05.999'
-        timezone: Local
-    - add_labels:
-        labels:
-          log.format: 'catalina.out'
-    - drop_fields:
-        fields: temp_timestamp
 
 # This collects access logs
 - type: filestream
   id: tomcat_access_default
   paths: {|{ LOGS_LINUX_TOMCAT_ACCESS_LOG_PATHS }|}
+
   processors:
+
     - if:
         regexp:
             message: '^\[\d{2}\/[a-zA-Z]{3}\/\d{4}:\d{2}:\d{2}:\d{2}\s.\d{4}\]\s' # access log valve default logging pattern
@@ -119,7 +63,8 @@
             overwrite_keys: true
         - add_labels:
             labels:
-              log.format: 'access_default'
+              log.format: "access_default"
+
     - timestamp:
         field: temp_timestamp
         layouts:
