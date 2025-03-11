@@ -34,7 +34,7 @@
 
 - type: filestream
   id: splunk_primary
-  paths: {{{ LOGS_LINUX_SPLUNK_PRIMARY_LOG_PATHS }}}
+  paths: {|{ LOGS_LINUX_SPLUNK_PRIMARY_LOG_PATHS }|}
   processors:
     - dissect:
         field: "message"
@@ -43,7 +43,7 @@
         ignore_missing: true
         ignore_failure: true
         overwrite_keys: true
-    - add_labels: 
+    - add_labels:
         labels:
           log.format: "splunk_primary"
     - timestamp:
@@ -56,7 +56,7 @@
 
 - type: filestream
   id: splunk_other
-  paths: {{{ LOGS_LINUX_SPLUNK_OTHER_LOG_PATHS }}}
+  paths: {|{ LOGS_LINUX_SPLUNK_OTHER_LOG_PATHS }|}
   processors:
     - dissect:
         field: "message"
@@ -65,7 +65,7 @@
         ignore_missing: true
         ignore_failure: true
         overwrite_keys: true
-    - add_labels: 
+    - add_labels:
         labels:
           log.format: "splunk_other"
     - timestamp:
@@ -78,7 +78,7 @@
 
 - type: filestream
   id: splunk_ui_access
-  paths: {{{ LOGS_LINUX_SPLUNK_ACCESS_LOG_PATHS }}}
+  paths: {|{ LOGS_LINUX_SPLUNK_ACCESS_LOG_PATHS }|}
   processors:
     - dissect:
         field: "message"
@@ -87,7 +87,7 @@
         ignore_missing: true
         ignore_failure: true
         overwrite_keys: true
-    - add_labels: 
+    - add_labels:
         labels:
           log.format: "splunk_ui_access"
     - timestamp:
@@ -100,11 +100,11 @@
 
 - type: filestream
   id: splunk_splunkd_access
-  paths: {{{ LOGS_LINUX_SPLUNK_SPLUNKD_ACCESS_LOG_PATHS }}}
+  paths: {|{ LOGS_LINUX_SPLUNK_SPLUNKD_ACCESS_LOG_PATHS }|}
   processors:
     - if:
         regexp:
-          message: ' - - - - - ' 
+          message: ' - - - - - '
       then:
         - dissect:
             field: "message"
@@ -116,7 +116,7 @@
       else:
         - if:
             regexp:
-              message: '" - ' 
+              message: '" - '
           then:
             - dissect:
                 field: "message"
@@ -133,7 +133,7 @@
                 ignore_missing: true
                 ignore_failure: true
                 overwrite_keys: true
-    - add_labels: 
+    - add_labels:
         labels:
           log.format: "splunk_splunkd_access"
     - timestamp:
@@ -146,11 +146,11 @@
 
 - type: filestream
   id: splunk_configuration_change
-  paths: {{{ LOGS_LINUX_SPLUNK_CONFIGURATION_CHANGE_LOG_PATHS }}}
+  paths: {|{ LOGS_LINUX_SPLUNK_CONFIGURATION_CHANGE_LOG_PATHS }|}
   processors:
     - if:
         regexp:
-          message: '"modtime":' 
+          message: '"modtime":'
       then:
         - dissect:
             field: "message"
