@@ -1,12 +1,10 @@
 - moriodata:
     info: "Collects log data from the Zabbix server on Linux systems"
-    href: "https://morio.it/hub/modules/logs/linux-zabbix-server"
     vars:
       LOGS_LINUX_ZABBIX_SERVER_LOG_PATHS:
         dflt:
           - /var/log/zabbix-agent/zabbix_server.log
         info: A list of (glob) paths from which to collect Zabbix server logs
-    version: 1
 
 # Zabbix server logs
 - type: filestream

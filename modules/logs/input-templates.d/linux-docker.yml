@@ -1,12 +1,10 @@
 - moriodata:
     info: Collects log data from Docker when the logs are in JSON or tab-delimited text formats
-    href: "https://morio.it/hub/modules/logs/linux-docker"
     vars:
       LOGS_LINUX_DOCKER_LOG_PATHS:
         dflt:
           - /var/lib/docker/containers/*/*-json.log
         info: A list of (glob) paths from which to collect Docker logs
-    version: 1
 
 - type: filestream
   id: docker_everything

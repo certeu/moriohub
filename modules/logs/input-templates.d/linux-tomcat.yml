@@ -1,6 +1,5 @@
 - moriodata:
     info: "Collects log data from Tomcat on Linux systems"
-    href: "https://morio.it/hub/modules/logs/linux-tomcat"
     vars:
       LOGS_LINUX_TOMCAT_ACCESS_LOG_PATHS:
         dflt:
@@ -14,7 +13,6 @@
         dflt:
           - /usr/local/tomcat/logs/catalina.out
         info: A list of (glob) paths from which to collect the Apache Tomcat catalina.out messages
-    version: 1
 
 # This collects catalina logs
 - type: filestream
@@ -58,7 +56,7 @@
   processors:
     - if:
         regexp:
-            message: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}' 
+            message: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}'
       then:
         # It's 2006-01-02 15:04:05,999
         - if:

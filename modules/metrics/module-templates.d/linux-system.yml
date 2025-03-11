@@ -1,7 +1,5 @@
 - moriodata:
     info: "Collects metrics from Linux systems"
-    href: "https://morio.it/hub/modules/metrics/linux-system"
-    version: 1
     vars:
       METRICS_LINUX_SYSTEM_INTERVAL_FILESYSTEM:
         dflt: 10m
