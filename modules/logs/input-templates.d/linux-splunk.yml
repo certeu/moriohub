@@ -1,7 +1,6 @@
 
 - moriodata:
     info: "Collects log data from Splunk on Linux systems"
-    href: "https://morio.it/hub/modules/logs/linux-splunk"
     vars:
       LOGS_LINUX_SPLUNK_PRIMARY_LOG_PATHS:
         dflt:
@@ -30,7 +29,6 @@
           - /opt/splunk/var/log/splunk/configuration_change.log
           - /opt/splunkforwarder/var/log/splunk/configuration_change.log
         info: A (glob) list of paths from which to collect Splunk configuration change logs
-    version: 1
 
 - type: filestream
   id: splunk_primary
