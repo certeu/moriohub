@@ -1,12 +1,10 @@
 - moriodata:
     info: "Collects log data from Samba on Linux systems"
-    href: "https://morio.it/hub/modules/logs/linux-samba"
     vars:
       LOGS_LINUX_SAMBA_LOG_PATHS:
         dflt:
           - /var/log/samba/log.*
         info: A (glob) list of paths from which to collect Samba logs
-    version: 1
 
 - type: filestream
   id: samba_everything

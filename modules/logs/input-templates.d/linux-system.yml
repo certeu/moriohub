@@ -1,7 +1,5 @@
 - moriodata:
     info: "Collects log data from journald on Linux systems"
-    href: "https://morio.it/hub/modules/logs/linux-system"
-    version: 1
 
 - type: journald # This collects all journald data
   id: journald_everything

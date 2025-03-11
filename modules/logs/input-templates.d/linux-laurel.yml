@@ -1,12 +1,10 @@
 - moriodata:
     info: "Collects log data from Laurel on Linux systems"
-    href: "https://morio.it/hub/modules/logs/linux-laurel"
     vars:
       LOGS_LINUX_LAUREL_LOG_PATHS:
         dflt:
           - /var/log/laurel/audit.log.*
         info: A (glob) list of paths from which to collect Laurel logs
-    version: 1
 
 - type: filestream
   id: laurel_everything

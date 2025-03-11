@@ -1,7 +1,5 @@
 - moriodata:
     info: "Auditd rules for Linux"
-    href: "https://github.com/certeu/moriohub/blob/develop/modules/audit/rule-templates.d/linux-system.rules"
-    version: 1
     vars:
       AUDIT_LINUX_SYSTEM_RULE_FILES:
         dflt:

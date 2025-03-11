@@ -1,6 +1,5 @@
 - moriodata:
     info: "Collects access and error log data from the Apache 2.x HTTP Server on Linux systems"
-    href: "https://morio.it/hub/modules/linux-apache2"
     vars:
       LOGS_LINUX_APACHE2_ACCESS_LOG_PATHS:
         dflt:
@@ -10,7 +9,6 @@
         dflt:
           - /var/log/apache2/*error*.log
         info: A (glob) list of paths from which to collect Apache error logs
-    version: 1
 
 # This collects all Apache error logs
 - type: filestream
