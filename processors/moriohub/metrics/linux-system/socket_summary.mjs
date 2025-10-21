@@ -1,0 +1,13 @@
+/*
+ * Caches the socket_summary metricset. Does not (currently) eventify.
+ */
+export default function socket_summary (params) {
+  if (params.settings.cache) return params.tools.cache.metricset(
+    {
+      all: params.data.system.socket.summary.all,
+      tcp: params.data.system.socket.summary.tcp.all,
+      udp: params.data.system.socket.summary.udp.all,
+    },
+    params
+  )
+}
