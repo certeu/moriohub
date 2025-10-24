@@ -4,11 +4,15 @@
  * by replacing only that specific file
  */
 import addedGroupAccountTo from './added-group-account-to.mjs'
+import boot from './boot.mjs'
 import changedAuditConfiguration from './changed-audit-configuration.mjs'
 import deletedGroupAccountFrom from './deleted-group-account-from.mjs'
-import ranCommand from './ran-command.mjs'
-import startedSession from './started-session.mjs'
+import deletedUserAccountFrom from './deleted-user-account-from.mjs'
 import endedSession from './ended-session.mjs'
+import startedSession from './started-session.mjs'
+import userAdded from './user_added.mjs'
+import userRemoved from './user_removed.mjs'
+
 // Allow extra imports here
 import extra from './_extra.mjs'
 // Shared code
@@ -20,11 +24,14 @@ import { config, auditSummary } from './_lib.mjs'
  */
 export default Object.entries({
   "added-group-account-to": addedGroupAccountTo,
+  "boot": boot,
   "changed-audit-configuration": changedAuditConfiguration,
   "deleted-group-account-from": deletedGroupAccountFrom,
-  "ran-command": ranCommand,
+  "deleted-user-account-from": deletedUserAccountFrom,
   "started-session": startedSession,
   "ended-session": endedSession,
+  "user_added": userAdded,
+  "user_removed": userRemoved,
   ...extra,
 }).map(([set, handler]) => typeof handler === 'function'
   ? config(set, handler)
