@@ -1,4 +1,4 @@
-import { rules } from './_escalation_rules.mjs'
+import { rules } from './_escalation-rules.mjs'
 
 export function escalate (params) {
   const { tools, settings } = params
