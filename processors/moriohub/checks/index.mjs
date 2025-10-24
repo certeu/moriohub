@@ -163,17 +163,16 @@ function handler (params) {
  *   - the ms it took to complete the healthcheck
  *   - days until the certificate expires
  */
-function healthcheckSummary ({ tools, data, topic, module, dataset }) {
+function healthcheckSummary ({ tools, data, topic, module, dataset, settings }) {
   return {
     // Up or not?
-    up: (tools.getSettings('tap.checks.up_values', []).indexOf(data.monitor.status.toLowerCase()) !== -1) ? 1 : 0,
+    up: (settings.up_values.indexOf(data.monitor.status.toLowerCase()) !== -1) ? 1 : 0,
     altup: data.summary?.up,
-    upvals: tools.getSettings('tap.checks.up_values', []),
     // Milliseconds the healthcheck took
     ms: Math.ceil(data.monitor.duration.us/1000),
     // Days before certificate expiry
     dbce: (
-      tools.getSettings('tap.checks.certificate_check', false) &&
+      settings.certificate_check &&
       data.monitor.type === 'http' &&
       data.tls &&
       data.url?.scheme === 'https'

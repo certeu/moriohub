@@ -5,7 +5,7 @@ import { userLifecycleEvent } from './_lib.mjs'
  *
  * @param {object} params - The full params passed to each handler
  */
-export default function deletedUserAccount (params) {
+export default function deletedUserAccountFrom (params) {
   if (!params.settings.cache && !params.settings.eventify) return false
 
   const { settings, tools } = params
