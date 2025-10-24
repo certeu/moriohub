@@ -5,7 +5,7 @@
  */
 import addedGroupAccountTo from './added-group-account-to.mjs'
 import changedAuditConfiguration from './changed-audit-configuration.mjs'
-import deleteGroupAccountFrom from './delete-group-account-from.mjs'
+import deletedGroupAccountFrom from './deleted-group-account-from.mjs'
 import ranCommand from './ran-command.mjs'
 import startedSession from './started-session.mjs'
 import endedSession from './ended-session.mjs'
@@ -21,7 +21,7 @@ import { config, auditSummary } from './_lib.mjs'
 export default Object.entries({
   "added-group-account-to": addedGroupAccountTo,
   "changed-audit-configuration": changedAuditConfiguration,
-  "delete-group-account-from": deleteGroupAccountFrom,
+  "deleted-group-account-from": deletedGroupAccountFrom,
   "ran-command": ranCommand,
   "started-session": startedSession,
   "ended-session": endedSession,

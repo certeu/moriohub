@@ -82,12 +82,15 @@ export function auditSummary ({ data, tools, topic, module, dataset }) {
     time: tools.extract.timestamp(data),
     // Host
     host: tools.extract.host(data),
+    hostname: tools.extract.hostname(data),
     // Topic, module, and dataset
     topic,
-    module, 
-    dataset, 
+    module,
+    dataset,
     // Source event
     sid: `audit.${tools.extract.id(data)}`,
+    // Context
+    context: tools.create.contextFromParams({ topic, module, dataset }),
   }
   // User
   if (data.user) {
@@ -106,3 +109,95 @@ export function auditSummary ({ data, tools, topic, module, dataset }) {
 
   return summary
 }
+
+export function userSessionEvent (params) {
+  const { data, tools, settings } = params
+  const summary = auditSummary(params)
+  const evt = {
+    ...summary,
+    title: `${params.dataset}: ${data.user?.name}`,
+    md_title: `${params.dataset}: ${tools.link.md.audit.user(data.user?.name)}`,
+    type: `${params.topic}.${params.module}.${params.dataset}`,
+  }
+  if (!evt.data) evt.data = {}
+  if (data.user?.effective?.name) {
+    evt.title += ` (as: ${data.user?.effective?.name})`
+    evt.md_title += ` (as: ${tools.link.md.audit.user(data.user?.effective?.name)}`
+  }
+  evt.title += ` on ${summary.hostname} (${tools.shortUuid(summary.host)}) (tty: ${summary.data?.terminal})`
+  evt.md_title += ` on ${summary.hostname} (${tools.link.md.inventory.host(summary.host, tools.shortUuid(summary.host))} (tty: ${summary.data?.terminal})`
+
+  return evt
+}
+
+export function groupLifecycleEvent (params) {
+  const { data, tools, settings } = params
+  const summary = auditSummary(params)
+  const evt = {
+    ...summary,
+    title: `${params.dataset}: ${data.group?.name} (id: ${data.group.id})`,
+    md_title: `${params.dataset}: ${data.group?.name} (id: ${data.group.id})`,
+    type: `${params.topic}.${params.module}.${params.dataset}`,
+  }
+  if (!evt.data) evt.data = {}
+  if (data.user?.name) {
+    evt.title += ` (by: ${data.user?.name})`
+    evt.md_title += ` (by: ${tools.link.md.audit.user(data.user?.name)}`
+  }
+  evt.title += ` on ${summary.hostname} (${tools.shortUuid(summary.host)}) (tty: ${summary.data?.terminal})`
+  evt.md_title += ` on ${summary.hostname} (${tools.link.md.inventory.host(summary.host, tools.shortUuid(summary.host))} (tty: ${summary.data?.terminal})`
+
+  return evt
+}
+
+/*
+ * A user lifecycle event is what is used when a user is added/removed
+ * with high-level tools that properly notify the auditing system.
+ * This is used by:
+ * - added-user-account
+ * - removed-user-account
+ */
+export function userLifecycleEvent (params) {
+  const { data, tools, settings } = params
+  const summary = auditSummary(params)
+  const evt = {
+    ...summary,
+    title: `${params.dataset}: New user created (uid: ${data.user.target.id})`,
+    md_title: `${params.dataset}: New user created (uid: ${data.user.target.id})`,
+    type: `${params.topic}.${params.module}.${params.dataset}`,
+  }
+  if (!evt.data) evt.data = {}
+  evt.title += ` on ${summary.hostname} (${tools.shortUuid(summary.host)})`
+  evt.md_title += ` on ${summary.hostname} (${tools.link.md.inventory.host(summary.host, tools.shortUuid(summary.host))}`
+  if (data.user?.name) {
+    evt.title += ` (by: ${data.user?.name})`
+    evt.md_title += ` (by: ${tools.link.md.audit.user(data.user?.name)}`
+  }
+
+  return evt
+}
+
+/*
+ * A user discovery event is what is used when a user changed is discoveread
+ * (by scanning /etc/passwd for example)
+ * In this case, we have info about the account, but not about who did it.
+ * This happens when users are added via low-level tools.
+ * This is used by:
+ * - user_added
+ * - user_removed
+ */
+export function userDiscoveryEvent (params) {
+  const { data, tools, settings } = params
+  const summary = auditSummary(params)
+  const evt = {
+    ...summary,
+    title: `${params.dataset}: ${data.message} on ${summary.hostname} (${tools.shortUuid(summary.host)})`
+    md_title: `${params.dataset}: ${data.message} on ${summary.hostname} (${tools.link.md.inventory.host(summary.host, tools.shortUuid(summary.host))}`
+    type: `${params.topic}.${params.module}.${params.dataset}`,
+  }
+  if (!evt.data) evt.data = {}
+
+  return evt
+}
+
+
