@@ -12,7 +12,7 @@ export default function boot (params) {
   const summary = auditSummary(params)
   const evt = {
     ...summary,
-    title: `${summary.dataset}: System boot on ${summary.hostname} (${tools.shortUuid(summary.host)})`
+    title: `${summary.dataset}: System boot on ${summary.hostname} (${tools.shortUuid(summary.host)})`,
     md_title: `${summary.dataset}: System boot on ${summary.hostname} (${tools.link.md.inventory.host(summary.host, tools.shortUuid(summary.host))})`,
     type: `${params.topic}.${params.module}.${params.dataset}`,
   }

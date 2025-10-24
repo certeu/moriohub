@@ -191,8 +191,8 @@ export function userDiscoveryEvent (params) {
   const summary = auditSummary(params)
   const evt = {
     ...summary,
-    title: `${params.dataset}: ${data.message} on ${summary.hostname} (${tools.shortUuid(summary.host)})`
-    md_title: `${params.dataset}: ${data.message} on ${summary.hostname} (${tools.link.md.inventory.host(summary.host, tools.shortUuid(summary.host))}`
+    title: `${params.dataset}: ${data.message} on ${summary.hostname} (${tools.shortUuid(summary.host)})`,
+    md_title: `${params.dataset}: ${data.message} on ${summary.hostname} (${tools.link.md.inventory.host(summary.host, tools.shortUuid(summary.host))}`,
     type: `${params.topic}.${params.module}.${params.dataset}`,
   }
   if (!evt.data) evt.data = {}
