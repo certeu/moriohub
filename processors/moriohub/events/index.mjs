@@ -1,3 +1,5 @@
+import { escalate } from './_lib.mjs'
+
 /*
  * A Morio stream processor to handle events data
  *
@@ -23,6 +25,22 @@ It can cache recent events, and supports dynamic loading of module-specific logi
           val: true,
           label: 'Cache recent event data',
           about: 'Caching event data allows consulting it through the dashboards provided by Morio&apos;s UI service'
+        },
+      ],
+    },
+    escalate: {
+      dflt: true,
+      title: 'Escalate based on event data',
+      type: 'list',
+      list: [
+        {
+          val: false,
+          label: 'Do not escalate based on event data (disable)',
+        },
+        {
+          val: true,
+          label: 'Escalate based on event data',
+          about: 'This will fan out events to the notifications/alerts/alarms topics based on the rules you set.',
         },
       ],
     },
@@ -52,6 +70,9 @@ It can cache recent events, and supports dynamic loading of module-specific logi
  *
  * @param {object} params - The full params passed to each handler
  */
-function handler ({ data, tools, settings }) {
+function handler (params) {
+  const { data, tools, settings } = params
   if (settings.cache) tools.cache.event(data, settings)
+  if (settings.escalate) escalate(params)
 }
+
