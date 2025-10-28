@@ -75,4 +75,3 @@ function handler (params) {
   if (settings.cache) tools.cache.event(data, settings)
   if (settings.escalate) escalate(params)
 }
-
