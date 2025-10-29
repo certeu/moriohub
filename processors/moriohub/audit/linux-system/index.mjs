@@ -9,6 +9,7 @@ import changedAuditConfiguration from './changed-audit-configuration.mjs'
 import deletedGroupAccountFrom from './deleted-group-account-from.mjs'
 import deletedUserAccountFrom from './deleted-user-account-from.mjs'
 import endedSession from './ended-session.mjs'
+import loggedIn from './logged-in.mjs'
 import startedSession from './started-session.mjs'
 import userAdded from './user_added.mjs'
 import userRemoved from './user_removed.mjs'
@@ -28,6 +29,7 @@ export default Object.entries({
   "changed-audit-configuration": changedAuditConfiguration,
   "deleted-group-account-from": deletedGroupAccountFrom,
   "deleted-user-account-from": deletedUserAccountFrom,
+  "logged-in": loggedIn,
   "started-session": startedSession,
   "ended-session": endedSession,
   "user_added": userAdded,
