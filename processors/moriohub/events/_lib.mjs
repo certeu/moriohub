@@ -83,7 +83,7 @@ async function handleEscalation(params, rule) {
   }
 
   // Step 5: Do we need to back off?
-  if (rule.backoff && backoff(rule.backoff)) return
+  if (rule.backoff && backoff(count)) return
 
   // Step 6: Escalate
   const escalation = {
