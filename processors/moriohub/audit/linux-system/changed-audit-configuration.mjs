@@ -41,9 +41,9 @@ export default function changedAuditConfiguration (params) {
     evt.title = `Audit configuration change (fixme: unhandled)`
     evt.md_title = `Audit configuration change (fixme: unhandled)`
   }
-  if (data.user?.name) {
-    evt.title += ` (by: ${data.user?.name})`
-    evt.md_title += ` (by: ${tools.link.md.audit.user(data.user?.name)}`
+  if (params.data.user?.name) {
+    evt.title += ` (by: ${params.data.user?.name})`
+    evt.md_title += ` (by: ${tools.link.md.audit.user(params.data.user?.name)}`
   }
   evt.title += ` on ${summary.hostname} (${tools.shortUuid(summary.host)}) (tty: ${summary.data?.terminal})`
   evt.md_title += ` on ${summary.hostname} (${tools.link.md.inventory.host(summary.host, tools.shortUuid(summary.host))} (tty: ${summary.data?.terminal})`
