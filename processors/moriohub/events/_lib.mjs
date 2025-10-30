@@ -49,12 +49,18 @@ async function handleEscalation(params, rule) {
   // Desctructure params
   const { tools, data } = params
 
+
   // Step 1: Grab the event hash and timestamp
   const hash = params.data.morio.event.hash
   const timestamp = tools.extract.timestamp(data)
 
+  // Support debug
+  const debug = debugHelper(params, hash)
+  if (rule.debug) debug.start()
+
   // Step 2: Cache the event
   const prefix = `event|${hash}`
+  if (rule.debug) debug.msg(`Caching event data`)
   await tools.valkey
     .pipeline()
     .set(`${prefix}.data`, tools.stringify({ ...data, timestamp }))
@@ -67,23 +73,53 @@ async function handleEscalation(params, rule) {
 
   // Step 3: Is there an 'on' method?
   const count = await tools.valkey.get(`${prefix}.count`)
+  if (rule.debug) debug.msg(`Repetition count for this event: ${count}`)
   if (rule.on && typeof rule.on === 'function') {
-    if (!rule.on({ ...params, count, rule })) return
+    if (rule.debug) debug.msg(`Running 'on' handler`)
+    if (!rule.on({ ...params, count, rule })) {
+      if (rule.debug) {
+        debug.msg(`The on-handler returned falsy, won't process this event any futher`)
+        debug.end()
+      }
+
+      return
+    }
   }
 
   // Step 4: Do we need to debounce this?
   if (rule.debounce) {
+    if (rule.debug) debug.msg(`Event needs to be debounced, window is ${rule.debounce} seconds`)
     const debounce_timestamp = await tools.valkey.get(`${prefix}.debounce_timestamp`)
     const debounce_delta = (tools.time.ms2s(tools.time.now()) - debounce_timestamp > rule.debounce)
+    if (rule.debug) debug.msg(`Debounce delta: ${debounce_delta}`)
     if (tools.time.ms2s(tools.time.now()) - debounce_timestamp > rule.debounce) {
+      if (rule.debug) debug.msg(`Debounce window has expired, resetting timer`)
       await tools.valkey.set(`${prefix}.debounce_timestamp`, tools.time.ms2s(tools.time.now()))
     }
     // Debounce window hasn't expired, return early
-    else return
+    else {
+      if (rule.debug) {
+        debug.msg(`Debouncing event, won't process this event any futher`)
+        debug.end()
+      }
+
+      return
+    }
   }
 
   // Step 5: Do we need to back off?
-  if (rule.backoff && backoff(count)) return
+  if (rule.backoff) {
+    if (rule.debug) debug.msg(`Event requires backoff`)
+    if (backoff(count)) {
+      if (rule.debug) {
+        debug.msg(`Backing off, as count is ${count}`)
+        debug.end()
+      }
+      return
+    }
+    else if (rule.debug) debug.msg(`Not backing off, as count is ${count}`)
+  }
+
 
   // Step 6: Escalate
   const escalation = {
@@ -96,13 +132,30 @@ async function handleEscalation(params, rule) {
     md_title: `[${count}x] ${data.morio.event.md_title}`,
     type: data.morio.event.type,
   }
-  if (rule.alarm) tools.produce.alarm(escalation)
-  if (rule.alert) tools.produce.alert(escalation)
-  if (rule.notify) tools.produce.notification(escalation)
-  if (rule.note) tools.cache.note(escalation.title, escalation)
+  if (rule.alarm) {
+          if (rule.debug) debug.msg('Producing an larm', escalation)
+         tools.produce.alarm(escalation)
+  }
+  if (rule.alert) {
+          if (rule.debug) debug.msg('Producing an lert', escalation)
+          tools.produce.alert(escalation)
+  }
+  if (rule.notify) {
+          if (rule.debug) debug.msg('Producing a notification', escalation)
+          tools.produce.notification(escalation)
+  }
+  if (rule.note) {
+          if (rule.debug) debug.msg('Caching a note', escalation)
+          tools.cache.note(escalation.title, escalation)
+  }
 
   // Step 7: Execute
-  if (rule.call && typeof rule.call === 'function') return rule.call({ ...params, count, rule, escalation })
+  if (rule.call && typeof rule.call === 'function') {
+          if (rule.debug) debug.msg(`Running 'call' handler`, data)
+          rule.call({ ...params, count, rule, escalation })
+  }
+
+  if (rule.debug) debug.end()
 }
 
 /*
@@ -117,4 +170,18 @@ async function handleEscalation(params, rule) {
 function backoff(count) {
   // This uses a bitwise AND for efficiency
   return (count && !(count & (count - 1))) ? false : true
+}
+
+/*
+ * A helper method for debugging event processors
+ */
+function debugHelper (params, hash) {
+  const { tools, data } = params
+  const id = hash.slice(0,8)
+
+  return {
+    start: (msg) => tools.cache.note(`[${id}] Start event processor debug`, data),
+    msg: (msg) => tools.cache.note(`[${id}] ${msg}`, data),
+    end: (msg) => tools.cache.note(`[${id}] End event processor debug`, data),
+  }
 }
