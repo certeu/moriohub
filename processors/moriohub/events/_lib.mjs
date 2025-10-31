@@ -31,26 +31,23 @@ export function escalate (params) {
   if (rules.unhandled) handleEscalation(params, rules.unhandled)
 }
 
-/*                                                                                                                            [4/1894]
+/*
  * This handles the actual escalation.
- * There's a number of rules settings we need to handle:
- * - on: Run a function to see if we should escalate
- * - debounce: Suppress repititions in a given time window
- * - backoff: Suppress repititions by backing off exponentially
- *
- * To make this possible, we need to know whether this
- * this is the first series in an event, or a repitition.
- * We use the cache to keep track of this.
  *
  * @param {object} params - All params passed to the event processor
- * @param {object} rule - The escalation rule for this dataset
+ * @param {object|function} rule - The escalation rule for this dataset
  */
 async function handleEscalation(params, rule) {
+  // Allow for passing in a function as rule
+  if (typeof rule === 'function') rule = rule(params)
+
+  // Skip if rule is falsy
+  if (!rule) return
+
   // Desctructure params
   const { tools, data } = params
 
-
-  // Step 1: Grab the event hash and timestamp
+  // Step 0: Grab the event hash and timestamp
   const hash = params.data.morio.event.hash
   const timestamp = tools.extract.timestamp(data)
 
@@ -58,22 +55,24 @@ async function handleEscalation(params, rule) {
   const debug = debugHelper(params, hash)
   if (rule.debug) debug.start()
 
-  // Step 2: Cache the event
+  // Step 1: Cache the event
   const prefix = `event|${hash}`
-  if (rule.debug) debug.msg(`Caching event data`)
+  const expire = rule.expire ? ['EX', rule.expire] : []
+  if (rule.debug) {
+    debug.msg(`Caching event data`)
+    if (expire.length > 0) debug.msg(`Event will expire after ${expire[1]} seconds`)
+    else debug.msg(`Event will not expire`)
+  }
   await tools.valkey
     .pipeline()
-    .set(`${prefix}.data`, tools.stringify({ ...data, timestamp }))
-    .set(`${prefix}.first_timestamp`, timestamp, "NX") // Set only if unset
-    // Note that for debouncing, we use the current time, not the event time
-    .set(`${prefix}.debounce_timestamp`, tools.time.ms2s(tools.time.now()), "NX") // Set only if unset
-    .set(`${prefix}.last_timestamp`, timestamp)
-    .incr(`${prefix}.count`)
+    .set(`${prefix}.data`, tools.stringify({ ...data, timestamp }), ...expire)
+    .set(`${prefix}.first_timestamp`, timestamp, "NX", ...expire) // Set only if unset
+    .set(`${prefix}.last_timestamp`, timestamp, ...expire)
     .exec()
-
-  // Step 3: Is there an 'on' method?
-  const count = await tools.valkey.get(`${prefix}.count`)
+  const count = await tools.valkey.incr(`${prefix}.count`)
   if (rule.debug) debug.msg(`Repetition count for this event: ${count}`)
+
+  // Step 2: Handle an 'on' method?
   if (rule.on && typeof rule.on === 'function') {
     if (rule.debug) debug.msg(`Running 'on' handler`)
     if (!rule.on({ ...params, count, rule })) {
@@ -86,28 +85,7 @@ async function handleEscalation(params, rule) {
     }
   }
 
-  // Step 4: Do we need to debounce this?
-  if (rule.debounce) {
-    if (rule.debug) debug.msg(`Event needs to be debounced, window is ${rule.debounce} seconds`)
-    const debounce_timestamp = await tools.valkey.get(`${prefix}.debounce_timestamp`)
-    const debounce_delta = (tools.time.ms2s(tools.time.now()) - debounce_timestamp > rule.debounce)
-    if (rule.debug) debug.msg(`Debounce delta: ${debounce_delta}`)
-    if (tools.time.ms2s(tools.time.now()) - debounce_timestamp > rule.debounce) {
-      if (rule.debug) debug.msg(`Debounce window has expired, resetting timer`)
-      await tools.valkey.set(`${prefix}.debounce_timestamp`, tools.time.ms2s(tools.time.now()))
-    }
-    // Debounce window hasn't expired, return early
-    else {
-      if (rule.debug) {
-        debug.msg(`Debouncing event, won't process this event any futher`)
-        debug.end()
-      }
-
-      return
-    }
-  }
-
-  // Step 5: Do we need to back off?
+  // Step 3: Do we need to back off?
   if (rule.backoff) {
     if (rule.debug) debug.msg(`Event requires backoff`)
     if (backoff(count)) {
@@ -120,8 +98,7 @@ async function handleEscalation(params, rule) {
     else if (rule.debug) debug.msg(`Not backing off, as count is ${count}`)
   }
 
-
-  // Step 6: Escalate
+  // Step 4: Escalate
   const escalation = {
     context: data.morio.event.context,
     data,
@@ -133,26 +110,26 @@ async function handleEscalation(params, rule) {
     type: data.morio.event.type,
   }
   if (rule.alarm) {
-          if (rule.debug) debug.msg('Producing an larm', escalation)
-         tools.produce.alarm(escalation)
+    if (rule.debug) debug.msg('Producing an larm', escalation)
+    tools.produce.alarm(escalation)
   }
   if (rule.alert) {
-          if (rule.debug) debug.msg('Producing an lert', escalation)
-          tools.produce.alert(escalation)
+    if (rule.debug) debug.msg('Producing an lert', escalation)
+    tools.produce.alert(escalation)
   }
   if (rule.notify) {
-          if (rule.debug) debug.msg('Producing a notification', escalation)
-          tools.produce.notification(escalation)
+    if (rule.debug) debug.msg('Producing a notification', escalation)
+    tools.produce.notification(escalation)
   }
   if (rule.note) {
-          if (rule.debug) debug.msg('Caching a note', escalation)
-          tools.cache.note(escalation.title, escalation)
+    if (rule.debug) debug.msg('Caching a note', escalation)
+    tools.cache.note(escalation.title, escalation)
   }
 
-  // Step 7: Execute
+  // Step 5: Execute call handler
   if (rule.call && typeof rule.call === 'function') {
-          if (rule.debug) debug.msg(`Running 'call' handler`, data)
-          rule.call({ ...params, count, rule, escalation })
+    if (rule.debug) debug.msg(`Running 'call' handler`, data)
+    rule.call({ ...params, count, rule, escalation })
   }
 
   if (rule.debug) debug.end()
@@ -173,7 +150,7 @@ function backoff(count) {
 }
 
 /*
- * A helper method for debugging event processors
+ * Debug helper
  */
 function debugHelper (params, hash) {
   const { tools, data } = params
