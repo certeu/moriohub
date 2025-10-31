@@ -151,7 +151,7 @@ function handler (params) {
         title: `⏳ Certificate will expire in ${summary.dbce} days: ${data?.url?.full}`,
         time: summary.time,
         type: 'tls.certificate.expiry',
-        data: { days_before_expiry: summary.dbce }
+        data: { days_before_expiry: summary.dbce },
         module: summary.module,
         topic: summary.topic,
         dataset: summary.dataset,
