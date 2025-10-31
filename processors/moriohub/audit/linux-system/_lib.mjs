@@ -89,9 +89,9 @@ export function auditSummary ({ data, tools, topic, module, dataset }) {
     dataset,
     // Source event
     sid: `audit.${tools.extract.id(data)}`,
-    // Context
-    context: tools.create.contextFromParams({ topic, module, dataset }),
   }
+  // Context
+  summary.context = tools.create.context(topic, module, dataset, summary.host)
   // User
   if (data.user) {
     summary.user = data.user

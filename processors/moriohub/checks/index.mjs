@@ -117,16 +117,19 @@ function handler (params) {
     settings.eventify &&
     data.url.full.indexOf('MORIO_IGNORE_WHEN_DOWN') === -1
   ) tools.produce.event({
-    context: tools.create.context('check', summary.id, summary.from),
+    context: tools.create.context('healthcheck', summary.type, summary.id, summary.from),
     href: `https://${tools.node.cluster}/boards/checks/${summary.id}`,
     time: summary.time,
     title: `Health check failed: ${summary.name}`,
-    type: `${summary.type}.healthcheck.down`,
+    type: `healthcheck.${summary.type}.down`,
     data: {
       from: summary.from,
       id: summary.id,
       type: summary.type,
     },
+    module: summary.module,
+    topic: summary.topic,
+    dataset: summary.dataset,
   })
 
   /*
@@ -149,6 +152,9 @@ function handler (params) {
         time: summary.time,
         type: 'tls.certificate.expiry',
         data: { days_before_expiry: summary.dbce }
+        module: summary.module,
+        topic: summary.topic,
+        dataset: summary.dataset,
       })
     }
   }
@@ -183,7 +189,7 @@ function healthcheckSummary ({ tools, data, topic, module, dataset, settings }) 
     uptime_since: data.state.started_at,
     // Time of this specific healthcheck
     time: tools.time.when(data),
-    // Type of healthcheck
+    // Type of the event
     type: data.monitor.type,
     // ID of the healthcheck
     id: data.monitor.id,
