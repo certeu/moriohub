@@ -72,6 +72,10 @@ It can cache recent events, and supports dynamic loading of module-specific logi
  */
 function handler (params) {
   const { data, tools, settings } = params
-  if (settings.cache) tools.cache.event(data, settings)
-  if (settings.escalate) escalate(params)
+  /*
+   * Escalation will also cache to detect dupes
+   * So only cache if escaltion is disabled
+   */
+  if (settings.cache && settings.escalate) escalate(params)
+  else if (settings.cache) tools.cache.event(data, settings)
 }
