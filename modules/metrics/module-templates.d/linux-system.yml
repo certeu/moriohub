@@ -28,7 +28,7 @@
 - module: system
   period: {| METRICS_LINUX_SYSTEM_INTERVAL_FILESYSTEM |}
   metricsets:
-    - fsstat
+    - filesystem
   processors:
     - drop_event:
         when:
