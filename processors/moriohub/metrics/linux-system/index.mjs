@@ -4,6 +4,7 @@
  * by replacing only that specific file
  */
 import diskio from './diskio.mjs'
+import filesystem from './filesystem.mjs'
 import load from './load.mjs'
 import memory from './memory.mjs'
 import network_summary from './network_summary.mjs'
@@ -18,6 +19,7 @@ import extra from './_extra.mjs'
  */
 export default Object.entries({
   diskio,
+  filesystem,
   load,
   memory,
   network_summary,
