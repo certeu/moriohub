@@ -28,7 +28,7 @@ export default function filesystem (params) {
     const type = ['filesystem', 'mount_point', 'used', 'high']
     const evt = {
       type: type.join('.'),
-      context: tools.create.context(...type, host, data.system.mount_point),
+      context: tools.create.context(...type, host, data.system.filesystem.mount_point),
       time: tools.extract.timestamp(data),
       host,
       hostname,
