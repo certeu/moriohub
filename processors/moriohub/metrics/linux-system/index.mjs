@@ -4,7 +4,7 @@
  * by replacing only that specific file
  */
 import diskio from './diskio.mjs'
-import filesystem from './filesystem.mjs'
+import filesystem, { settings as filesystemSettings } from './filesystem.mjs'
 import load from './load.mjs'
 import memory from './memory.mjs'
 import network_summary from './network_summary.mjs'
@@ -12,6 +12,10 @@ import process_summary from './process_summary.mjs'
 import socket_summary from './socket_summary.mjs'
 // Allow extra imports here
 import extra from './_extra.mjs'
+
+const customSettings = {
+  filesystem: filesystemSettings,
+}
 
 /*
  * Morio stream processors to handle metrics from the linux-system module
@@ -27,7 +31,7 @@ export default Object.entries({
   socket_summary,
   ...extra,
 }).map(([set, handler]) => typeof handler === 'function'
-  ? config(set, handler)
+  ? config(set, handler, customSettings[set])
   : undefined
 )
 
@@ -39,7 +43,7 @@ export default Object.entries({
  * @param {function} processor - The function that implements the stream processing logic
  * @return {object} spobj - The stream processor object
  */
-function config (metricset, handler) {
+function config (metricset, handler, customSettings={}) {
   return {
     id: `moriohub_metrics_linux-system_${metricset}`,
     info: `This stream processor plugin will process metrics data from the ${metricset} metricset of the linux-system module.`,
@@ -84,6 +88,7 @@ function config (metricset, handler) {
           },
         ],
       },
+      ...customSettings,
     },
     handler,
   }
