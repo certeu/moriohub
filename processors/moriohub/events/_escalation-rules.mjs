@@ -5,56 +5,38 @@
 
 /*
  * - Generate a notification
- * - Debounce repeating events within a 5-second window
  */
-const notify = {
-  notify: true,
-  debounce: 5,
-}
+const notify = { notify: true }
 
 /*
  * - Generate an alert
- * - Debounce repeating events within a 5-second window
  * - Do exponential backoff
  */
-const alert = {
-  alert: true,
-  debounce: 5,
-  backoff: true
-}
+const alert = { alert: true, backoff: true }
 
 /*
  * - Generate an alarm
- * - Debounce repeating events within a 5-second window
  * - Do exponential backoff
  */
-const alarm = {
-  alarm: true,
-  debounce: 3,
-  backoff: true
-}
+const alarm = { alarm: true, backoff: true }
 
 /*
  * On the first event:
  * - Generate a notification
- * - Debounce repeating events within a 5-second window
  * - Do exponential backoff
  * On subsequent events:
  * - Generate an alarm
- * - Debounce repeating events within a 5-second window
  * - Do exponential backoff
  */
 const healthcheck = [
   {
     on: ({ count }) => count < 2,
     notify: true,
-    debounce: 3,
     backoff: true
   },
   {
     on: ({ count }) => count > 1,
     alarm: true,
-    debounce: 3,
     backoff: true
   },
 ]
@@ -68,6 +50,7 @@ export const rules = {
     "session-ended",
   ],
   on: {
+    "filesystem.mount_point.used.high": ({ data }) => (data.morio?.event?.data?.used > 0.97) ? alarm : alert,
     "http.healthcheck.down": healthcheck,
   },
 }
