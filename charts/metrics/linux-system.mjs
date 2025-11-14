@@ -101,6 +101,52 @@ export default {
     return Object.values(charts)
   },
 
+  filesystem: ({ data, templates, clone, formatBytes }) => {
+    /*
+     * We have multiple documents per tick
+     * One for each mount point. So we first need to compile
+     * a list of all mount points for which we have metrics
+     */
+    // {\"files\":124440,\"mount_point\":\"/boot\",\"used\":0.6017,\"timestamp\":1763045138521}
+    const mounts = new Set()
+    for (const m of data.filter(d => d.files)) mounts.add(m.mount_point)
+
+    /*
+     * The used field holds a percentage (0 => 1)
+     */
+    const used = {
+      ...clone(templates.charts.line),
+      /*
+       * Sort the mounts list to maintain the same order
+       * as the chart colors will be determined by this
+       * and not doing so risks colors being swapped by
+       * live updates
+       */
+      series: [...mounts].sort()
+        .map(name => {
+          let prev
+          return {
+            ...templates.series.line,
+            name,
+            data: data.filter(entry => entry.mount_point === name).map((entry, i) => [entry.timestamp, entry.used])
+          }
+        }),
+      id: 'filesystem',
+    }
+
+    // Set titles and yAxis label
+    used.title.text = 'Used disk space per Mount'
+    used.yAxis.name = 'Percentage'
+
+    // Format bytes
+    used.yAxis.axisLabel = { formatter: (val) => Math.round(val*1000)/10+'%' }
+
+    // Give more room for yAxis text
+    used.yAxis.nameGap = 70
+
+    return [used]
+  },
+
   load: ({ data, templates, clone }) => {
 
     const full = {
