@@ -50,7 +50,9 @@ export const rules = {
     "session-ended",
   ],
   on: {
+    "boot": alert,
     "filesystem.mount_point.used.high": ({ data }) => (data.morio?.event?.data?.used > 0.97) ? alarm : alert,
     "http.healthcheck.down": healthcheck,
+    "shutdown": alert,
   },
 }
