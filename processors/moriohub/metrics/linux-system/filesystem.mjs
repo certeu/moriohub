@@ -25,7 +25,7 @@ export default function filesystem (params) {
     // Create event
     const host = tools.extract.host(data)
     const hostname = tools.extract.hostname(data)
-    const type = ['filesystem', 'mount_point', 'used', 'high']
+    const type = [params.topic, params.module, params.dataset, 'mount-used-high']
     const evt = {
       type: type.join('.'),
       context: tools.create.context(...type, host, data.system.filesystem.mount_point),

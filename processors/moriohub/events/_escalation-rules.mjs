@@ -46,13 +46,13 @@ const note = true
 export const rules = {
   unmatched: note,
   never: [
-    "session-started",
-    "session-ended",
+    "audit.linux-system.ended-session",
+    "audit.linux-system.started-session",
   ],
   on: {
-    "boot": alert,
-    "filesystem.mount_point.used.high": ({ data }) => (data.morio?.event?.data?.used > 0.97) ? alarm : alert,
-    "http.healthcheck.down": healthcheck,
-    "shutdown": alert,
+    "audit.linux-system.boot": alert,
+    "audit.linux-system.shutdown": alert,
+    "checks.http.down": healthcheck,
+    "metrics.linux-system.filesystem.mount-used-high": ({ data }) => (data.morio?.event?.data?.used > 0.97) ? alarm : alert,
   },
 }
