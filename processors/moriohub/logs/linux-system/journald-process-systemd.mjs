@@ -24,7 +24,7 @@ export default function journaldProcessSystemd(params) {
     // Create the event
     const host = tools.extract.host(data)
     const hostname = tools.extract.hostname(data)
-    const type = [params.module, 'systemd', 'service', result[1] === 'Started' ? 'started' : 'stopped']
+    const type = [params.topic, params.module, 'systemd', 'service', result[1] === 'Started' ? 'started' : 'stopped']
     const context = tools.create.context(...type.slice(3), result[1], host)
     const hash = tools.create.hash(type.join('.')+context)
     const evt = {
