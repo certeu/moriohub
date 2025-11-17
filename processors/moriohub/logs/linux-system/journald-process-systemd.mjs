@@ -1,5 +1,3 @@
-
-
 /*
  * This handler looks at systemd logs to eventify starting/stopping of services
  *
@@ -42,8 +40,8 @@ export default function journaldProcessSystemd(params) {
       context,
       hash,
       // Titles
-      title: `Service ${result[1]} ${result[2].toLowerCase()} on ${hostname}`,
-      md_title: `Service ${result[1]} ${result[2].toLowerCase()}` +
+      title: `Service ${result[1].toLowerCase()}: ${result[2]} on ${hostname}`,
+      md_title: `Service ${result[1].toLowerCase()}: ${result[2]} ` +
       `on ${tools.link.md.inventory.host(host, hostname)} ` +
       `${tools.link.md.audit.log(host, params.module, params.dataset, ':receipt:')}` +
       `[:question:](https://docs.cert.europa.eu/docs/reference/data/morio/events/${type.join('.')}/)`,
