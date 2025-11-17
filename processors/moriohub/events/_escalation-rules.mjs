@@ -53,6 +53,8 @@ export const rules = {
     "audit.linux-system.boot": alert,
     "audit.linux-system.shutdown": alert,
     "checks.http.down": healthcheck,
+    "logs.linux-system.systemd.service.started": notify,
+    "logs.linux-system.systemd.service.stopped": notify,
     "metrics.linux-system.filesystem.mount-used-high": ({ data }) => (data.morio?.event?.data?.used > 0.97) ? alarm : alert,
   },
 }
