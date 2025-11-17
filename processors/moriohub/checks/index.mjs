@@ -117,7 +117,7 @@ function handler (params) {
     settings.eventify &&
     data.url.full.indexOf('MORIO_IGNORE_WHEN_DOWN') === -1
   ) tools.produce.event({
-    context: tools.create.context('healthcheck', summary.type, summary.id, summary.from),
+    context: tools.create.context(params.topic, summary.type, summary.id, summary.from),
     href: `https://${tools.node.cluster}/boards/checks/${summary.id}`,
     time: summary.time,
     title: `Health check failed: ${summary.name}`,

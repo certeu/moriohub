@@ -117,7 +117,7 @@ export function userSessionEvent (params) {
     ...summary,
     title: `${params.dataset}: ${data.user?.name}`,
     md_title: `${params.dataset}: ${tools.link.md.audit.user(data.user?.name)}`,
-    type: `${params.topic}.${params.module}.${params.dataset}`,
+    type: `${params.module}.${params.dataset}`,
   }
   if (!evt.data) evt.data = {}
   if (data.user?.effective?.name) {
