@@ -35,3 +35,8 @@
           regexp:
             system.filesystem.mount_point: {|{ METRICS_LINUX_SYSTEM_MOUNTPOINTS_IGNORE_REGEX }|}
 
+- module: linux
+  period: "{| MORIO_TICK |}"
+  metricsets:
+    - pressure
+
