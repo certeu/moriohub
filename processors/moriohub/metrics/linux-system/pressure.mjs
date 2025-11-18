@@ -1,13 +1,29 @@
+const pressureWindows = ["10", "60", "300"]
+
 /*
  * Caches pressure metricset. Does not (currently) eventify.
  */
-export default function load (params) {
-  if (params.settings.cache) {
-    // Default caching
-    //params.tools.cache.metricset(params.data.system.load, params)
-    // Top-20 caching for load1, load5, and load15
-    //for (const i of ["1", "5", "15"]) {
-    //  params.tools.cache.top(`metric|top-linux-load${i}`,[ params.data.host.id, params.data.system.load.norm[i] ])
-    //}
-  }
+export default function pressure (params) {
+  if (!params.settings.cache) return
+
+  const { data, settings, tools } = params
+  // Default caching
+  let type = false
+  if (data.linux?.pressure?.cpu) type === 'cpu'
+  else if (data.linux?.pressure?.memory) type === 'memory'
+  else if (data.linux?.pressure?.io) type === 'type'
+  if (!type) return
+
+  // Default caching
+  tools.cache.metricset(data.linux.pressure[type], params, `linux.pressure.${type}`)
+  // Top-x caching
+  pressureWindows.map(t => tools.cache.top(
+    `metric|top-linux-pressure-${type}-some${t}`,
+    [ data.host.id, Number(data.linux.pressure[type].some[t].pct) ]
+  ))
+  // IO and Memory also have full data
+  if (type !== "cpu") pressureWindows.map(t => tools.cache.top(
+    `metric|top-linux-pressure-${type}-full${t}`,
+    [ data.host.id, Number(data.linux.pressure[type].full[t].pct) ]
+  ))
 }
