@@ -8,14 +8,19 @@ export default function filesystem (params) {
   if (!params.data.system.filesystem.files) return
 
   const { data, settings, tools } = params
-  if (settings.cache) tools.cache.metricset(
-    {
-      files: data.system.filesystem.files,
-      mount_point: data.system.filesystem.mount_point,
-      used: data.system.filesystem.used.pct,
-    },
-    params
-  )
+  if (settings.cache) {
+    // Default caching
+    tools.cache.metricset(
+      {
+        files: data.system.filesystem.files,
+        mount_point: data.system.filesystem.mount_point,
+        used: data.system.filesystem.used.pct,
+      },
+      params
+    )
+    // Top-20 caching for used disk space per mount
+    tools.cache.top(`metric|top-linux-mount-used`,[ `${data.host.id}|${data.system.filesystem.mount_point}`, data.system.filesystem.used.pct ])
+  }
 
   if (
     settings.eventify &&

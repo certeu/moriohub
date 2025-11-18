@@ -8,6 +8,7 @@ import filesystem, { settings as filesystemSettings } from './filesystem.mjs'
 import load from './load.mjs'
 import memory from './memory.mjs'
 import network_summary from './network_summary.mjs'
+import pressure from './pressure.mjs'
 import process_summary from './process_summary.mjs'
 import socket_summary from './socket_summary.mjs'
 // Allow extra imports here
@@ -27,6 +28,7 @@ export default Object.entries({
   load,
   memory,
   network_summary,
+  pressure,
   process_summary,
   socket_summary,
   ...extra,
