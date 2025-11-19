@@ -15,7 +15,7 @@ export default function pressure (params) {
   if (!type) return
 
   // Default caching
-  tools.cache.metricset(data.linux.pressure[type], params, `linux.pressure.${type}`)
+  tools.cache.metricset(data.linux.pressure[type], params, `pressure.${type}`)
   // Top-x caching
   pressureWindows.map(t => tools.cache.top(
     `metric|-|top|linux-pressure-${type}-some${t}`,
