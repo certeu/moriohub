@@ -20,7 +20,7 @@ export default function journaldProcessSystemd(params) {
     if (
       result[2].slice(0,5) === 'user@' ||
       result[2].slice(0,8) === 'session-' ||
-      result[2].slice(0,17) === 'user-runtime-dir@' ||
+      result[2].slice(0,17) === 'user-runtime-dir@'
     ) return
 
     // Create the event
