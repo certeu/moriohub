@@ -17,7 +17,11 @@ export default function journaldProcessSystemd(params) {
       return
     }
     // Filter out user sessions
-    if (result[2].slice(0,8) === 'session-' || result[2].slice(0,5) === 'user@') return
+    if (
+      result[2].slice(0,5) === 'user@' ||
+      result[2].slice(0,8) === 'session-' ||
+      result[2].slice(0,17) === 'user-runtime-dir@' ||
+    ) return
 
     // Create the event
     const host = tools.extract.host(data)
