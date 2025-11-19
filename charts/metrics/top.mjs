@@ -102,5 +102,15 @@ export default {
       label: {
         show: true,
         position: 'insideBottom',
+        distance: 15,
+        align: 'start',
+        verticalAlign: 'bottom',
+        formatter: "{b}: {c}%",
+      },
+      data: ordered.map(entry => entry.value)
+    }]
+
+    return option
+  },
 }
 
