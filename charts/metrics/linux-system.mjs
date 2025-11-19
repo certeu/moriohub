@@ -292,6 +292,101 @@ export default {
     return [procs, threads]
   },
 
+  "pressure.cpu": ({ data, templates, clone }) => {
+    const pressure = {
+      ...clone(templates.charts.line),
+      id: 'cpu-pressure',
+      series: ['10', '60', '300'].map(name => ({
+        ...templates.series.line,
+        name: `${name}s-pressure`,
+        data: data.map(entry => [entry.timestamp, entry.some[name].pct])
+      }))
+    }
+    pressure.title.text = `CPU Pressure`
+    pressure.yAxis.name = 'Pressure'
+
+    const time = {
+      ...clone(templates.charts.line),
+      id: 'cpu-stall-us',
+      series: [{
+        ...templates.series.line,
+        name: `stall-time-us`,
+        data: data.map(entry => [entry.timestamp, entry.some.total.time.us])
+      }]
+    }
+    time.title.text = `Total CPU Stall Time in μs`
+    time.yAxis.name = 'Microseconds'
+    time.yAxis.min = 'dataMin'
+
+    return [ pressure, time ]
+  },
+
+  "pressure.io": ({ data, templates, clone }) => {
+    const charts = []
+    for (const type of ["full", "some"]) {
+      const chart = {
+        ...clone(templates.charts.line),
+        id: `io-pressure-${type}`,
+        series: ['10', '60', '300'].map(name => ({
+          ...templates.series.line,
+          name: `${name}s-pressure-${type}`,
+          data: data.map(entry => [entry.timestamp, entry[type][name].pct])
+        }))
+      }
+      chart.title.text = `IO Pressure (${type})`
+      chart.yAxis.name = 'Pressure'
+      charts.push(chart)
+      const time = {
+        ...clone(templates.charts.line),
+        id: `io-stall-us-${type}`,
+        series: [{
+          ...templates.series.line,
+          name: `stall-time-us-${type}`,
+          data: data.map(entry => [entry.timestamp, entry[type].total.time.us])
+        }]
+      }
+      time.title.text = `Total IO Stall Time in μs (${type})`
+      time.yAxis.name = 'Microseconds'
+      time.yAxis.min = 'dataMin'
+      charts.push(time)
+    }
+
+    return charts
+  },
+
+  "pressure.memory": ({ data, templates, clone }) => {
+    const charts = []
+    for (const type of ["full", "some"]) {
+      const chart = {
+        ...clone(templates.charts.line),
+        id: `memory-pressure-${type}`,
+        series: ['10', '60', '300'].map(name => ({
+          ...templates.series.line,
+          name: `${name}s-pressure-${type}`,
+          data: data.map(entry => [entry.timestamp, entry[type][name].pct])
+        }))
+      }
+      chart.title.text = `Memory Pressure (${type})`
+      chart.yAxis.name = 'Pressure'
+      charts.push(chart)
+      const time = {
+        ...clone(templates.charts.line),
+        id: `memory-stall-us-${type}`,
+        series: [{
+          ...templates.series.line,
+          name: `stall-time-us-${type}`,
+          data: data.map(entry => [entry.timestamp, entry[type].total.time.us])
+        }]
+      }
+      time.title.text = `Total Memory Stall Time in μs (${type})`
+      time.yAxis.name = 'Microseconds'
+      time.yAxis.min = 'dataMin'
+      charts.push(time)
+    }
+
+    return charts
+  },
+
   socket_summary: ({ data, templates, clone }) => {
     const all = {
       ...clone(templates.charts.line),
