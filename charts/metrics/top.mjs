@@ -35,23 +35,72 @@ export default {
 
     return option
   },
-  "top-linux-load1": (params) => morio.charts.lib.metricsTopLoad("1", params),
-  "top-linux-load5": (params) => morio.charts.lib.metricsTopLoad("5", params),
-  "top-linux-load15": (params) => morio.charts.lib.metricsTopLoad("15", params),
-  "top-linux-pressure-cpu-some10": (params) => window.morio.charts._lib.metricsTopPressure("cpu", "10", "some", params),
-  "top-linux-pressure-cpu-some60": (params) => window.morio.charts._lib.metricsTopPressure("cpu", "60", "some", params),
-  "top-linux-pressure-cpu-some300": (params) => window.morio.charts._lib.metricsTopPressure("cpu", "300", "some", params),
-  "top-linux-pressure-io-full10": (params) => window.morio.charts._lib.metricsTopPressure("io", "10", "full", params),
-  "top-linux-pressure-io-full60": (params) => window.morio.charts._lib.metricsTopPressure("io", "60", "full", params),
-  "top-linux-pressure-io-full300": (params) => window.morio.charts._lib.metricsTopPressure("io", "300", "full", params),
-  "top-linux-pressure-io-some10": (params) => window.morio.charts._lib.metricsTopPressure("io", "10", "some", params),
-  "top-linux-pressure-io-some60": (params) => window.morio.charts._lib.metricsTopPressure("io", "60", "some", params),
-  "top-linux-pressure-io-some300": (params) => window.morio.charts._lib.metricsTopPressure("io", "300", "some", params),
-  "top-linux-pressure-memory-full10": (params) => window.morio.charts._lib.metricsTopPressure("memory", "10", "full", params),
-  "top-linux-pressure-memory-full60": (params) => window.morio.charts._lib.metricsTopPressure("memory", "60", "full", params),
-  "top-linux-pressure-memory-full300": (params) => window.morio.charts._lib.metricsTopPressure("memory", "300", "full", params),
-  "top-linux-pressure-memory-some10": (params) => window.morio.charts._lib.metricsTopPressure("memory", "10", "some", params),
-  "top-linux-pressure-memory-some60": (params) => window.morio.charts._lib.metricsTopPressure("memory", "60", "some", params),
-  "top-linux-pressure-memory-some300": (params) => window.morio.charts._lib.metricsTopPressure("memory", "300", "some", params),
+  "top-linux-load1": (params) => window.morio.charts.top._topLoad("1", params),
+  "top-linux-load5": (params) => window.morio.charts.top._topLoad("5", params),
+  "top-linux-load15": (params) => window.morio.charts.top._topLoad("15", params),
+  "top-linux-pressure-cpu-some10": (params) => window.morio.charts.top._topPressure("cpu", "10", "some", params),
+  "top-linux-pressure-cpu-some60": (params) => window.morio.charts.top._topPressure("cpu", "60", "some", params),
+  "top-linux-pressure-cpu-some300": (params) => window.morio.charts.top._topPressure("cpu", "300", "some", params),
+  "top-linux-pressure-io-full10": (params) => window.morio.charts.top._topPressure("io", "10", "full", params),
+  "top-linux-pressure-io-full60": (params) => window.morio.charts.top._topPressure("io", "60", "full", params),
+  "top-linux-pressure-io-full300": (params) => window.morio.charts.top._topPressure("io", "300", "full", params),
+  "top-linux-pressure-io-some10": (params) => window.morio.charts.top._topPressure("io", "10", "some", params),
+  "top-linux-pressure-io-some60": (params) => window.morio.charts.top._topPressure("io", "60", "some", params),
+  "top-linux-pressure-io-some300": (params) => window.morio.charts.top._topPressure("io", "300", "some", params),
+  "top-linux-pressure-memory-full10": (params) => window.morio.charts.top._topPressure("memory", "10", "full", params),
+  "top-linux-pressure-memory-full60": (params) => window.morio.charts.top._topPressure("memory", "60", "full", params),
+  "top-linux-pressure-memory-full300": (params) => window.morio.charts.top._topPressure("memory", "300", "full", params),
+  "top-linux-pressure-memory-some10": (params) => window.morio.charts.top._topPressure("memory", "10", "some", params),
+  "top-linux-pressure-memory-some60": (params) => window.morio.charts.top._topPressure("memory", "60", "some", params),
+  "top-linux-pressure-memory-some300": (params) => window.morio.charts.top._topPressure("memory", "300", "some", params),
+  "_topLoad": (type, { data, templates, inventory, orderBy }) => {
+      if (!data) return null
+      const ordered = orderBy(data.map(d => ({ host: d.entry, value: d.value })), 'value', 'desc')
+
+      // Now prepare the data for the Echarts
+      const option = { ...templates.charts.horbar }
+      option.title.text = `Top Load-${type} (normalized)`
+      option.xAxis.name = `Load-${type}`
+      option.yAxis.data = ordered.map(entry => ({ value: inventory[entry.host]?.fqdn || entry.host }))
+      option.yAxis.name = 'Host'
+      option.yAxis.axisLabel = { show: false }
+      option.series = [{
+        name: `load-${type}`,
+        type: 'bar',
+        label: {
+          show: true,
+          position: 'insideBottom',
+          distance: 15,
+          align: 'start',
+          verticalAlign: 'end',
+          formatter: "{b}: {c}",
+        },
+        data: ordered.map(entry => entry.value)
+      }]
+
+      return option
+  },
+  "_topPressure": (resource, period, scope, { data, templates, inventory, orderBy }) => {
+    if (!data) return null
+    const ordered = orderBy(data
+      .map(d => ({ host: d.entry, value: Math.round(Number(d.value)*1000)/10 }))
+      .filter(d => d.value > 0)
+    , 'value', 'desc')
+
+    if (ordered.length < 1) return null
+
+    // Now prepare the data for the Echarts
+    const option = { ...templates.charts.horbar }
+    option.title.text = `Top pressure on ${resource.toUpperCase()} over the last ${period}s`
+    option.xAxis.name = `Pressure on ${resource}`
+    option.yAxis.data = ordered.map(entry => ({ value: inventory[entry.host]?.fqdn || entry.host }))
+    option.yAxis.name = 'Host'
+    option.yAxis.axisLabel = { show: false }
+    option.series = [{
+      name: `${resource} pressure`,
+      type: 'bar',
+      label: {
+        show: true,
+        position: 'insideBottom',
 }
 
