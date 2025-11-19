@@ -11,7 +11,7 @@ export default function pressure (params) {
   let type = false
   if (data.linux?.pressure?.cpu) type = 'cpu'
   else if (data.linux?.pressure?.memory) type = 'memory'
-  else if (data.linux?.pressure?.io) type = 'type'
+  else if (data.linux?.pressure?.io) type = 'io'
   if (!type) return
 
   // Default caching
