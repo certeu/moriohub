@@ -18,12 +18,12 @@ export default function pressure (params) {
   tools.cache.metricset(data.linux.pressure[type], params, `linux.pressure.${type}`)
   // Top-x caching
   pressureWindows.map(t => tools.cache.top(
-    `metric|top-linux-pressure-${type}-some${t}`,
+    `metric|-|top|linux-pressure-${type}-some${t}`,
     [ data.host.id, Number(data.linux.pressure[type].some[t].pct) ]
   ))
   // IO and Memory also have full data
   if (type !== "cpu") pressureWindows.map(t => tools.cache.top(
-    `metric|top-linux-pressure-${type}-full${t}`,
+    `metric|-|top|linux_pressure-${type}-full${t}`,
     [ data.host.id, Number(data.linux.pressure[type].full[t].pct) ]
   ))
 }

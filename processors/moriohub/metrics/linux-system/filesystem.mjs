@@ -19,7 +19,7 @@ export default function filesystem (params) {
       params
     )
     // Top-20 caching for used disk space per mount
-    tools.cache.top(`metric|top-linux-mount-used`,[ `${data.host.id}|${data.system.filesystem.mount_point}`, data.system.filesystem.used.pct ])
+    tools.cache.top(`metric|-|top|linux-mount-used`,[ `${data.host.id}|${data.system.filesystem.mount_point}`, data.system.filesystem.used.pct ])
   }
 
   if (

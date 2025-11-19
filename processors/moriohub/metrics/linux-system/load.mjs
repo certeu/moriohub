@@ -7,7 +7,7 @@ export default function load (params) {
     params.tools.cache.metricset(params.data.system.load, params)
     // Top-20 caching for load1, load5, and load15
     for (const i of ["1", "5", "15"]) {
-      params.tools.cache.top(`metric|top-linux-load${i}`,[ params.data.host.id, params.data.system.load.norm[i] ])
+      params.tools.cache.top(`metric|-|top|linux-load${i}`,[ params.data.host.id, params.data.system.load.norm[i] ])
     }
   }
 }
