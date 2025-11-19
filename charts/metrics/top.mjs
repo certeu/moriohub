@@ -3,7 +3,10 @@
  * on how to write a charts plugin
  */
 export default {
-  "top-linux-mount-used": ({ data, templates, inventory, orderBy }) => {
+  "linux-load1": (params) => window.morio.charts.metrics.top._topLoad("1", params),
+  "linux-load5": (params) => window.morio.charts.metrics.top._topLoad("5", params),
+  "linux-load15": (params) => window.morio.charts.metrics.top._topLoad("15", params),
+  "linux-mount-used": ({ data, templates, inventory, orderBy }) => {
     const ordered = orderBy(
       data.map(d => {
         const [host, mount] = d.entry.split('|')
@@ -35,9 +38,6 @@ export default {
 
     return option
   },
-  "linux-load1": (params) => window.morio.charts.metrics.top._topLoad("1", params),
-  "linux-load5": (params) => window.morio.charts.metrics.top._topLoad("5", params),
-  "linux-load15": (params) => window.morio.charts.metrics.top._topLoad("15", params),
   "linux-pressure-cpu-some10": (params) => window.morio.charts.metrics.top._topPressure("cpu", "10", "some", params),
   "linux-pressure-cpu-some60": (params) => window.morio.charts.metrics.top._topPressure("cpu", "60", "some", params),
   "linux-pressure-cpu-some300": (params) => window.morio.charts.metrics.top._topPressure("cpu", "300", "some", params),
