@@ -1,0 +1,56 @@
+- moriodata:
+    info: "Collects metrics from Hashicorp Vault on Linux systems"
+    vars:
+      METRICS_LINUX_VAULT_HOST:
+        dflt: "https://localhost"
+        info: The protocol+host of the local Vault instance
+      METRICS_LINUX_VAULT_PORT:
+        dflt: "8200"
+        info: The port on which the local Vault instance is listening
+
+#
+# Metric collection is disabled because Vault metrics provide limited
+# value for day-to-day observability, and are more geared towards
+# in-depth Vault debugging.
+#
+# Still, if you want to collect these metrics, you can do so by
+# uncommenting the config below.
+#
+# Tip: Configure a Vault listener for observability
+# If you enable Vault metrics, the /v1/sys/metrics endpoint
+# will be polled every MORIO_TICK (30 seconds). This ends up
+# generating a lot of entries in Vault's audit log, which is
+# not all that useful.
+#
+# As such, we recommend to configure an additional Vault
+# listener in your Vault config that allows unauthenticated
+# access to the metrics endpoint. Just make sure to not expose
+# that listener to users.
+# Here is an example HCL snippet for such a listener:
+#
+# listener "tcp" {
+#   address = "0.0.0.0:8280"
+#   tls_cert_file = "/vault/certs/nodes-chain.pem"
+#   tls_key_file = "/vault/certs/nodes-key.pem"
+#   tls_disable_client_certs = "true"
+#   telemetry {
+#     unauthenticated_metrics_access = "true"
+#   }
+# }
+#
+# If you don't mind anonymous users accessing the metrics endpoint,
+# you can also add the telemetry stanza to your main listener.
+#
+
+
+#- module: http
+#  metricsets:
+#    - json
+#  period: "{| MORIO_TICK |}"
+#  ssl.verification.mode: none
+#  hosts:
+#    - "{|{ METRICS_LINUX_VAULT_HOST }|}"
+#  port: "{|{ METRICS_LINUX_VAULT_PORT }|}"
+#  paths:
+#    - "/v1/sys/metrics"
+#

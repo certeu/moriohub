@@ -1,0 +1,34 @@
+- moriodata:
+    info: "Collects log data from Hashicorp Vault on Linux systems"
+    vars:
+      LOGS_LINUX_VAULT_AUDIT_LOG_PATHS:
+        dflt:
+          - /var/log/vault/vault_audit.log
+        info: A list of (glob) paths from which to collect Hashicorp Vault audit logs
+      LOGS_LINUX_VAULT_LOG_PATHS:
+        dflt:
+          - /var/log/vault/vault.log
+        info: A list of (glob) paths from which to collect Hashicorp Vault logs
+
+- type: filestream
+  id: hashicorp_vault_audit_log
+  paths: {|{ LOGS_LINUX_VAULT_AUDIT_LOG_PATHS }|}
+  processors:
+    - add_labels:
+        labels:
+          morio.dataset: vault-audit-log
+    - decode_json_fields: &json
+        fields: ["message"]
+        process_array: false
+        max_depth: 2
+        target: "message_json"
+        overwrite_keys: false
+        add_error_key: false
+- type: filestream
+  id: hashicorp_vault_log
+  paths: {|{ LOGS_LINUX_VAULT_AUDIT_LOG_PATHS }|}
+  processors:
+    - add_labels:
+        labels:
+          morio.dataset: vault-log
+    - decode_json_fields: *json
