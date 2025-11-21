@@ -26,8 +26,8 @@
 
 - module: elasticsearch
   period: "{| MORIO_TICK |}"
-  metricsets: {|{ METRICS_LINUX_ELASTICSEARCH_HOSTS }|}
-  hosts: {|{ METRICS_LINUX_ELASTICSEARCH_METRICSETS }|}
+  metricsets: {|{ METRICS_LINUX_ELASTICSEARCH_METRICSETS }|}
+  hosts: {|{ METRICS_LINUX_ELASTICSEARCH_HOSTS }|}
   ssl.certificate_authorities: {|{ METRICS_LINUX_ELASTICSEARCH_CAS }|}
 # Include username if it is set
 {|#METRICS_LINUX_ELASTICSEARCH_USERNAME|}
