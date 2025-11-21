@@ -1,0 +1,27 @@
+- moriodata:
+    info: Collects log data from Traefik
+    vars:
+      LOGS_LINUX_TRAEFIK_LOG_PATHS:
+        dflt:
+          - /var/log/traefik/traefik.log
+        info: A list of (glob) paths from which to collect Traefik logs
+      LOGS_LINUX_TRAEFIK_ACCESS_LOG_PATHS:
+        dflt:
+          - /var/log/traefik/traefik.access.log
+        info: A list of (glob) paths from which to collect Traefik access logs
+
+- type: filestream
+  id: traefik_log
+  paths: {|{ LOGS_LINUX_TRAEFIK_LOG_PATHS }|}
+  processors:
+    - add_labels:
+        labels:
+          morio.dataset: traefik-log
+
+- type: filestream
+  id: traefik_access_log
+  paths: {|{ LOGS_LINUX_TRAEFIK_LOG_PATHS }|}
+  processors:
+    - add_labels:
+        labels:
+          morio.dataset: traefik-access-log
