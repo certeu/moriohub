@@ -1,0 +1,43 @@
+- moriodata:
+    info: "Collects metrics from Elasticsearch nodes on Linux systems"
+    vars:
+      METRICS_LINUX_ELASTICSEARCH_METRICSETS:
+        dflt:
+          - node
+          - node_stats
+          - cluster_stats
+          - index_summary
+        info: The metricsets to collect on every tick
+      METRICS_LINUX_ELASTICSEARCH_API_KEY:
+        dflt: ""
+        info: The API key to connect to the Elasticsearch API (formatted as key:secret)
+      METRICS_LINUX_ELASTICSEARCH_CAS:
+        dflt: []
+        info: A list of paths to certificates of trusted CAs
+      METRICS_LINUX_ELASTICSEARCH_HOSTS:
+        dflt: ["http://localhost:9200"]
+        info: The (list of) host(s) to collect metrics from (as url)
+      METRICS_LINUX_ELASTICSEARCH_PASSWORD:
+        dflt: ""
+        info: The password (for METRICS_LINUX_ELAsTICSEARCH_USERNAME) to connect to the Elasticsearch API
+      METRICS_LINUX_ELASTICSEARCH_USERNAME:
+        dflt: ""
+        info: The username to connect to the Elasticsearch API
+
+- module: elasticsearch
+  period: "{| MORIO_TICK |}"
+  metricsets: {|{ METRICS_LINUX_ELASTICSEARCH_HOSTS }|}
+  hosts: {|{ METRICS_LINUX_ELASTICSEARCH_METRICSETS }|}
+  ssl.certificate_authorities: {|{ METRICS_LINUX_ELASTICSEARCH_CAS }|}
+# Include username if it is set
+{|#METRICS_LINUX_ELASTICSEARCH_USERNAME|}
+  username: {|{ METRICS_LINUX_ELASTICSEARCH_USERNAME }|}
+{|/METRICS_LINUX_ELASTICSEARCH_USERNAME|}
+# Include password if it is set
+{|#METRICS_LINUX_ELASTICSEARCH_PASSWORD|}
+  password: {|{ METRICS_LINUX_ELASTICSEARCH_PASSWORD }|}
+{|/METRICS_LINUX_ELASTICSEARCH_PASSWORD|}
+# Include api_key if it is set
+{|#METRICS_LINUX_ELASTICSEARCH_API_KEY|}
+  api_key: {|{ METRICS_LINUX_ELASTICSEARCH_API_KEY }|}
+{|/METRICS_LINUX_ELASTICSEARCH_API_KEY|}
