@@ -9,7 +9,7 @@
     info: "Collects metrics from CoreDNS on Linux systems"
     vars:
       METRICS_LINUX_COREDNS_DOCKER_JOURNALD_HOSTPORT:
-        dflt: "localhos:9153t"
+        dflt: "localhos:9153"
         info: The host:port combo on which the prometheus metrics are exposed
       METRICS_LINUX_COREDNS_DOCKER_JOURNALD_INCLUDE:
         dflt:
