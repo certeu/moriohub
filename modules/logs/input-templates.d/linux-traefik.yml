@@ -14,14 +14,50 @@
   id: traefik_log
   paths: {|{ LOGS_LINUX_TRAEFIK_LOG_PATHS }|}
   processors:
+    # Set dataset
     - add_labels:
         labels:
           morio.dataset: traefik-log
+    # Parse log message as JSON
+    - decode_json_fields:
+        fields: ["message"]
+        process_array: false
+        max_depth: 2
+        target: "traefik.log"
+        overwrite_keys: false
+        add_error_key: false
+    # Copy fields for ECS compliance
+    - copy_fields:
+        fields:
+          - from: traefik.log.timestamp
+            to: "@timestamp"
+        fail_on_error: false
+        ignore_missing: true
 
 - type: filestream
   id: traefik_access_log
-  paths: {|{ LOGS_LINUX_TRAEFIK_LOG_PATHS }|}
+  paths: {|{ LOGS_LINUX_TRAEFIK_ACCESS_LOG_PATHS }|}
   processors:
+    # Set dataset
     - add_labels:
         labels:
           morio.dataset: traefik-access-log
+    # Parse log message as JSON
+    - decode_json_fields:
+        fields: ["message"]
+        process_array: false
+        max_depth: 2
+        target: "traefik.access_log"
+        overwrite_keys: false
+        add_error_key: false
+    # Copy fields for ECS compliance
+    - copy_fields:
+        fields:
+          - from: traefik.access_log.time
+            to: "@timestamp"
+          - from: traefik.access_log.ClientHost
+            to: client.ip
+          - from: traefik.access_log.ClientPort
+            to: client.port
+        fail_on_error: false
+        ignore_missing: true
