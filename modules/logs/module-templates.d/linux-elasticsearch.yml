@@ -1,42 +1,5 @@
-- moriodata:
-    info: "Collects log data from Elasticsearch on Linux systems"
-    vars:
-      LOGS_LINUX_ELASTICSEARCH_AUDIT_LOG_PATHS:
-        dflt:
-          - /var/log/elasticsearch/*_audit.json
-        info: The path(s) to the Elasticsearch audit logs
-
-      LOGS_LINUX_ELASTICSEARCH_DEPRECATION_LOG_PATHS:
-        dflt:
-          - /var/log/elasticsearch/*_deprecation.json
-        info: The path(s) to the Elasticsearch deprecation logs
-
-      LOGS_LINUX_ELASTICSEARCH_GC_LOG_PATHS:
-        dflt:
-          - /var/log/elasticsearch/gc.log.[0-9]*
-          - /var/log/elasticsearch/gc.log
-        info: The path(s) to the Elasticsearch garbage collector logs
-
-      LOGS_LINUX_ELASTICSEARCH_SERVER_LOG_PATHS:
-        dflt:
-          - /var/log/elasticsearch/*_server.json
-        info: The path(s) to the Elasticsearch server logs
-
-      LOGS_LINUX_ELASTICSEARCH_SLOW_LOG_PATHS:
-        dflt:
-          - /var/log/elasticsearch/*_index_search_slowlog.json
-          - /var/log/elasticsearch/*_index_indexing_slowlog.json
-        info: The path(s) to the Elasticsearch slow logs
-
-- module: elasticsearch
-  audit:
-    var.paths: {|{ LOGS_LINUX_ELASTICSEARCH_AUDIT_LOG_PATHS }|}
-  deprecation:
-    var.paths: {|{ LOGS_LINUX_ELASTICSEARCH_DEPRECATION_LOG_PATHS }|}
-  gc:
-    var.paths: {|{ LOGS_LINUX_ELASTICSEARCH_GC_LOG_PATHS }|}
-  server:
-    enabled: true
-    var.paths: {|{ LOGS_LINUX_ELASTICSEARCH_SERVER_LOG_PATHS }|}
-  slowlog:
-    var.paths: {|{ LOGS_LINUX_ELASTICSEARCH_SLOW_LOG_PATHS }|}
+# noop
+#
+# Filebeat does not list inputs as modules.
+# So we keep an empty file here to make sure this shows up as a Filebeat module.
+#
