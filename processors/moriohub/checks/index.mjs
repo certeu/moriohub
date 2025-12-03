@@ -155,6 +155,7 @@ function handler (params) {
         context: tools.create.context(`tls.certificate.${tools.format.escape(data.url.full)}`),
         href: `https://${tools.node.cluster}/boards/checks/${summary.id}`,
         title: `⏳ Certificate will expire in ${summary.dbce} days: ${data?.url?.full}`,
+        md_title: `⏳ Certificate will expire in ${summary.dbce} days: ${data?.url?.full}`,
         time: summary.time,
         type: 'tls.certificate.expiry',
         data: { days_before_expiry: summary.dbce },

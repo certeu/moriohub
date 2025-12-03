@@ -63,19 +63,20 @@ async function handleEscalation(params, rule) {
     if (expire.length > 0) debug.msg(`Event will expire after ${expire[1]} seconds`)
     else debug.msg(`Event will not expire`)
   }
+  const reps = await tools.valkey.incr(`${prefix}.reps`)
+  tools.set(data, 'morio.event.reps', reps)
   await tools.valkey
     .pipeline()
     .set(`${prefix}.data`, tools.stringify({ ...data, timestamp }), ...expire)
     .set(`${prefix}.first_timestamp`, timestamp, "NX", ...expire) // Set only if unset
     .set(`${prefix}.last_timestamp`, timestamp, ...expire)
     .exec()
-  const count = await tools.valkey.incr(`${prefix}.count`)
-  if (rule.debug) debug.msg(`Repetition count for this event: ${count}`)
+  if (rule.debug) debug.msg(`Reps for this event: ${reps}`)
 
   // Step 2: Handle an 'on' method?
   if (rule.on && typeof rule.on === 'function') {
     if (rule.debug) debug.msg(`Running 'on' handler`)
-    if (!rule.on({ ...params, count, rule })) {
+    if (!rule.on({ ...params, reps, rule })) {
       if (rule.debug) {
         debug.msg(`The on-handler returned falsy, won't process this event any futher`)
         debug.end()
@@ -85,17 +86,18 @@ async function handleEscalation(params, rule) {
     }
   }
 
+
   // Step 3: Do we need to back off?
   if (rule.backoff) {
     if (rule.debug) debug.msg(`Event requires backoff`)
-    if (backoff(count)) {
+    if (backoff(reps)) {
       if (rule.debug) {
-        debug.msg(`Backing off, as count is ${count}`)
+        debug.msg(`Backing off, as reps is ${reps}`)
         debug.end()
       }
       return
     }
-    else if (rule.debug) debug.msg(`Not backing off, as count is ${count}`)
+    else if (rule.debug) debug.msg(`Not backing off, as reps is ${reps}`)
   }
 
   // Step 4: Escalate
@@ -105,8 +107,8 @@ async function handleEscalation(params, rule) {
     host: tools.extract.host(data),
     tags: rule.tags || [],
     time: timestamp,
-    title: `[${count}x] ${data.morio.event.title}`,
-    md_title: `[${count}x] ${data.morio.event.md_title}`,
+    title: `[${reps}x] ${data.morio.event.title}`,
+    md_title: `[${reps}x] ${data.morio.event.md_title}`,
     type: data.morio.event.type,
   }
   if (rule.alarm) {
@@ -129,7 +131,7 @@ async function handleEscalation(params, rule) {
   // Step 5: Execute call handler
   if (rule.call && typeof rule.call === 'function') {
     if (rule.debug) debug.msg(`Running 'call' handler`, data)
-    rule.call({ ...params, count, rule, escalation })
+    rule.call({ ...params, reps, rule, escalation })
   }
 
   if (rule.debug) debug.end()
@@ -141,12 +143,12 @@ async function handleEscalation(params, rule) {
  * This will return false (do not backoff) on:
  * 1,2,4,8,16,32,64,128,256,512,1024,2048,...
  *
- * @param {number} count - The number of repititions
+ * @param {number} reps - The number of repititions
  * @return {bool} backoff - True when we should back off, false if not
  */
-function backoff(count) {
+function backoff(reps) {
   // This uses a bitwise AND for efficiency
-  return (count && !(count & (count - 1))) ? false : true
+  return (reps && !(reps & (reps - 1))) ? false : true
 }
 
 /*

@@ -6,19 +6,19 @@
 /*
  * - Generate a notification
  */
-const notify = { notify: true }
+const notify = { notify: true, expire: 300 }
 
 /*
  * - Generate an alert
  * - Do exponential backoff
  */
-const alert = { alert: true, backoff: true }
+const alert = { alert: true, backoff: true, expire: 900 }
 
 /*
  * - Generate an alarm
  * - Do exponential backoff
  */
-const alarm = { alarm: true, backoff: true }
+const alarm = { alarm: true, backoff: true, expire: 86400 }
 
 /*
  * On the first event:
@@ -30,14 +30,16 @@ const alarm = { alarm: true, backoff: true }
  */
 const healthcheck = [
   {
-    on: ({ count }) => count < 2,
+    on: ({ reps }) => reps < 2,
     notify: true,
-    backoff: true
+    backoff: true,
+    expire: 45,
   },
   {
-    on: ({ count }) => count > 1,
+    on: ({ reps }) => reps > 1,
     alarm: true,
     backoff: true
+    expire: 45,
   },
 ]
 
