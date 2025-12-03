@@ -126,7 +126,7 @@ function handler (params) {
     href: `https://${tools.node.cluster}/boards/checks/${summary.id}`,
     time: summary.time,
     title: `Health check failed: ${summary.name}`,
-    healthcheck: (id, name, txt=false) => `[${txt ? txt : name}](${tools.link.raw.to('/boards/checks/'+id)})`,
+    md_title: `Health check failed: ${tools.link.md.healthcheck(summary.id, summary.name)}`,
     type: `healthcheck.${summary.type}.down`,
     data: {
       from: summary.from,
