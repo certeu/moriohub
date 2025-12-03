@@ -18,7 +18,19 @@ export function escalate (params) {
   if (rules.on[type]) {
     // If it's an array of rules, process each of them
     if (Array.isArray(rules.on[type])) {
-      for (const rule of rules.on[type]) handleEscalation(params, rule)
+      /*
+       * In this case, we will call the escalation handler more than
+       * once for the same event. However, things like caching the
+       * event or counting its repetitions should only happen once
+       * for each event. Which is why we define this 'first' variable
+       * and pass it to handleEscalation so it can rely on it to do
+       * things once once if first is true
+       */
+      let first = true
+      for (const rule of rules.on[type]) {
+        handleEscalation(params, rule, first)
+        first = false
+      }
     }
     // If it's a simple rule, process it
     else handleEscalation(params, rules.on[type])
@@ -36,8 +48,9 @@ export function escalate (params) {
  *
  * @param {object} params - All params passed to the event processor
  * @param {object|function} rule - The escalation rule for this dataset
+ * @param {boolean} first - Will be true if this is the first time processing this message
  */
-async function handleEscalation(params, rule) {
+async function handleEscalation(params, rule, first=true) {
   // Allow for passing in a function as rule
   if (typeof rule === 'function') rule = rule(params)
 
@@ -55,25 +68,31 @@ async function handleEscalation(params, rule) {
   const debug = debugHelper(params, hash)
   if (rule.debug) debug.start()
 
-  // Step 1: Cache the event
+  // Detect repetitions
   const prefix = `event|${hash}`
-  const expire = rule.expire ? ['EX', rule.expire] : []
-  if (rule.debug) {
-    debug.msg(`Caching event data`)
-    if (expire.length > 0) debug.msg(`Event will expire after ${expire[1]} seconds`)
-    else debug.msg(`Event will not expire`)
-  }
-  const reps = await tools.valkey.incr(`${prefix}.reps`)
-  tools.set(data, 'morio.event.reps', reps)
-  await tools.valkey
-    .pipeline()
-    .set(`${prefix}.data`, tools.stringify({ ...data, timestamp }), ...expire)
-    .set(`${prefix}.first_timestamp`, timestamp, "NX", ...expire) // Set only if unset
-    .set(`${prefix}.last_timestamp`, timestamp, ...expire)
-    .exec()
-  if (rule.debug) debug.msg(`Reps for this event: ${reps}`)
+  const reps = first
+    ? await tools.valkey.incr(`${prefix}.reps`)
+    : await tools.valkey.get(`${prefix}.reps`)
 
-  // Step 2: Handle an 'on' method?
+  // Step 1: Cache the event (first only)
+  if (first) {
+    const expire = rule.expire ? ['EX', rule.expire] : []
+    if (rule.debug) {
+      debug.msg(`Caching event data`)
+      if (expire.length > 0) debug.msg(`Event will expire after ${expire[1]} seconds`)
+      else debug.msg(`Event will not expire`)
+    }
+    tools.set(data, 'morio.event.reps', reps)
+    await tools.valkey
+      .pipeline()
+      .set(`${prefix}.data`, tools.stringify({ ...data, timestamp }), ...expire)
+      .set(`${prefix}.first_timestamp`, timestamp, "NX", ...expire) // Set only if unset
+      .set(`${prefix}.last_timestamp`, timestamp, ...expire)
+      .exec()
+    if (rule.debug) debug.msg(`Reps for this event: ${reps}`)
+  }
+
+  // Step 2: Handle an 'on' method
   if (rule.on && typeof rule.on === 'function') {
     if (rule.debug) debug.msg(`Running 'on' handler`)
     if (!rule.on({ ...params, reps, rule })) {
@@ -110,13 +129,14 @@ async function handleEscalation(params, rule) {
     title: `[${reps}x] ${data.morio.event.title}`,
     md_title: `[${reps}x] ${data.morio.event.md_title}`,
     type: data.morio.event.type,
+    reps,
   }
   if (rule.alarm) {
-    if (rule.debug) debug.msg('Producing an larm', escalation)
+    if (rule.debug) debug.msg('Producing an alarm', escalation)
     tools.produce.alarm(escalation)
   }
   if (rule.alert) {
-    if (rule.debug) debug.msg('Producing an lert', escalation)
+    if (rule.debug) debug.msg('Producing an alert', escalation)
     tools.produce.alert(escalation)
   }
   if (rule.notify) {
