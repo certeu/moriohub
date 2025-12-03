@@ -38,7 +38,7 @@ const healthcheck = [
   {
     on: ({ reps }) => reps > 1,
     alarm: true,
-    backoff: true
+    backoff: true,
     expire: 45,
   },
 ]
