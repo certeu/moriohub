@@ -23,9 +23,14 @@ It also supports verifying the expiry of TLS certificates.
         },
       ],
     },
+    cap: {
+      dflt: 300,
+      title: 'Health check cache entry limit',
+      type: 'number',
+    },
     hostCap: {
       dflt: 150,
-      title: 'Health check cache entry limit',
+      title: 'Health check cache per-host entry limit',
       type: 'number',
     },
     eventify: {
