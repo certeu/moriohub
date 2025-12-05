@@ -3,22 +3,26 @@
  * That makes it easy for people to override an implementation
  * by replacing only that specific file
  */
-import container from './container.mjs'
-import event from './event.mjs'
 import healthcheck from './healthcheck.mjs'
 import info from './info.mjs'
+
+customSettings = {
+  healthcheck: {
+    cache: undefined,
+    cap: undefined,
+  },
+  info: {},
+}
 
 /*
  * Morio stream processors to handle metrics from the linux-system module
  * We have one processor per metricset
  */
 export default Object.entries({
-  container,
-  event,
   healthcheck,
   info,
 }).map(([set, handler]) => typeof handler === 'function'
-  ? config(set, handler)
+  ? config(set, handler, customSettings[set])
   : undefined
 )
 
@@ -30,7 +34,7 @@ export default Object.entries({
  * @param {function} processor - The function that implements the stream processing logic
  * @return {object} spobj - The stream processor object
  */
-function config (metricset, handler) {
+function config (metricset, handler, customSettings) {
   return {
     id: `moriohub_metrics_linux-docker_${metricset}`,
     info: `This stream processor plugin will process metrics data from the ${metricset} metricset of the linux-docker module.`,
@@ -75,6 +79,7 @@ function config (metricset, handler) {
           },
         ],
       },
+      ...customSettings,
     },
     handler,
   }

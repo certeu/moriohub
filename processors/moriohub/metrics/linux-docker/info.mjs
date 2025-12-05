@@ -3,7 +3,7 @@
  */
 export default function info (params) {
   if (params.settings.cache) {
-    // Default caching
-    //params.tools.cache.metricset(params.data.system.load, params)
+    params.tools.cache.metricset(params.data.docker.info.containers, params, 'containers')
+    params.tools.cache.metricset(params.data.docker.info.images, params, 'images')
   }
 }
