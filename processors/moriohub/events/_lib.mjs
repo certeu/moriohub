@@ -115,7 +115,8 @@ async function handleEscalation(params, rule, first=true) {
     else if (rule.debug) debug.msg(`Not backing off, as reps is ${reps}`)
   }
 
-  // Step 4: Escalate                                                                                                                   const escalation = {
+  // Step 4: Escalate
+  const escalation = {
     context: data.morio.event.context,
     data,
     host: tools.extract.host(data),
