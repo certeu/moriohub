@@ -41,6 +41,7 @@ export default function healthcheck (params) {
       topic,
       module,
       dataset,
+      reps: data.docker.healthcheck.failingstreak,
     })
   }
 }
