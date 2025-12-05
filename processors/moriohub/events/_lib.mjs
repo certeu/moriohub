@@ -51,28 +51,29 @@ export function escalate (params) {
  * @param {boolean} first - Will be true if this is the first time processing this message
  */
 async function handleEscalation(params, rule, first=true) {
-  // Allow for passing in a function as rule
-  if (typeof rule === 'function') rule = rule(params)
-
-  // Skip if rule is falsy
-  if (!rule) return
-
   // Desctructure params
   const { tools, data } = params
 
-  // Step 0: Grab the event hash and timestamp
+  // Grab the event hash and timestamp
   const hash = params.data.morio.event.hash
   const timestamp = tools.extract.timestamp(data)
-
-  // Support debug
-  const debug = debugHelper(params, hash)
-  if (rule.debug) debug.start()
 
   // Detect repetitions
   const prefix = `event|${hash}`
   const reps = first
     ? await tools.valkey.incr(`${prefix}.reps`)
     : await tools.valkey.get(`${prefix}.reps`)
+  tools.set(data, 'morio.event.reps', reps)
+
+  // Allow for passing in a function as rule
+  if (typeof rule === 'function') rule = rule({ ...params, data, reps, rule, first })
+
+  // Skip if rule is falsy
+  if (!rule) return
+
+  // Support debug
+  const debug = debugHelper(params, hash)
+  if (rule.debug) debug.start()
 
   // Step 1: Cache the event (first only)
   if (first) {
@@ -82,7 +83,6 @@ async function handleEscalation(params, rule, first=true) {
       if (expire.length > 0) debug.msg(`Event will expire after ${expire[1]} seconds`)
       else debug.msg(`Event will not expire`)
     }
-    tools.set(data, 'morio.event.reps', reps)
     await tools.valkey
       .pipeline()
       .set(`${prefix}.data`, tools.stringify({ ...data, timestamp }), ...expire)
@@ -95,17 +95,13 @@ async function handleEscalation(params, rule, first=true) {
   // Step 2: Handle an 'on' method
   if (rule.on && typeof rule.on === 'function') {
     if (rule.debug) debug.msg(`Running 'on' handler`)
-    if (!rule.on({ ...params, reps, rule })) {
+    if (!rule.on({ ...params, data, reps, rule })) {
       if (rule.debug) {
         debug.msg(`The on-handler returned falsy, won't process this event any futher`)
         debug.end()
       }
 
-      return
-    }
-  }
-
-
+      return                                                                                                                              }                                                                                                                                   }
   // Step 3: Do we need to back off?
   if (rule.backoff) {
     if (rule.debug) debug.msg(`Event requires backoff`)
@@ -119,8 +115,7 @@ async function handleEscalation(params, rule, first=true) {
     else if (rule.debug) debug.msg(`Not backing off, as reps is ${reps}`)
   }
 
-  // Step 4: Escalate
-  const escalation = {
+  // Step 4: Escalate                                                                                                                   const escalation = {
     context: data.morio.event.context,
     data,
     host: tools.extract.host(data),
@@ -142,8 +137,7 @@ async function handleEscalation(params, rule, first=true) {
   if (rule.notify) {
     if (rule.debug) debug.msg('Producing a notification', escalation)
     tools.produce.notification(escalation)
-  }
-  if (rule.note) {
+  }                                                                                                                                     if (rule.note) {
     if (rule.debug) debug.msg('Caching a note', escalation)
     tools.cache.note(escalation.title, escalation)
   }
@@ -159,8 +153,7 @@ async function handleEscalation(params, rule, first=true) {
 
 /*
  * Exponential backoff check
- *
- * This will return false (do not backoff) on:
+ *                                                                                                                                     * This will return false (do not backoff) on:
  * 1,2,4,8,16,32,64,128,256,512,1024,2048,...
  *
  * @param {number} reps - The number of repititions
@@ -177,8 +170,7 @@ function backoff(reps) {
 function debugHelper (params, hash) {
   const { tools, data } = params
   const id = hash.slice(0,8)
-
-  return {
+                                                                                                                                        return {
     start: (msg) => tools.cache.note(`[${id}] Start event processor debug`, data),
     msg: (msg) => tools.cache.note(`[${id}] ${msg}`, data),
     end: (msg) => tools.cache.note(`[${id}] End event processor debug`, data),
