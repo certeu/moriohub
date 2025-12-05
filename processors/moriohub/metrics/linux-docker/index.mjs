@@ -6,7 +6,7 @@
 import healthcheck from './healthcheck.mjs'
 import info from './info.mjs'
 
-customSettings = {
+const customSettings = {
   healthcheck: {
     cache: undefined,
     cap: undefined,
