@@ -6,14 +6,6 @@
 import healthcheck from './healthcheck.mjs'
 import info from './info.mjs'
 
-const customSettings = {
-  healthcheck: {
-    cache: undefined,
-    cap: undefined,
-  },
-  info: {},
-}
-
 /*
  * Morio stream processors to handle metrics from the linux-system module
  * We have one processor per metricset
@@ -22,7 +14,7 @@ export default Object.entries({
   healthcheck,
   info,
 }).map(([set, handler]) => typeof handler === 'function'
-  ? config(set, handler, customSettings[set])
+  ? config(set, handler)
   : undefined
 )
 
@@ -34,7 +26,7 @@ export default Object.entries({
  * @param {function} processor - The function that implements the stream processing logic
  * @return {object} spobj - The stream processor object
  */
-function config (metricset, handler, customSettings) {
+function config (metricset, handler) {
   return {
     id: `moriohub_metrics_linux-docker_${metricset}`,
     info: `This stream processor plugin will process metrics data from the ${metricset} metricset of the linux-docker module.`,
@@ -79,7 +71,6 @@ function config (metricset, handler, customSettings) {
           },
         ],
       },
-      ...customSettings,
     },
     handler,
   }
