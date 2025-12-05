@@ -30,7 +30,7 @@ export default function healthcheck (params) {
       time: tools.time.when(data),
       title: `Container unhealthy: ${data.container.name} on ${data.host.name || tools.shortUuid(data.host.id)} (${data.container.image.name})`,
       md_title: `Container unhealthy: ${data.container.name} on ${tools.link.md.inventory.host(data.host.id, data.host.name || tools.shortUuid(data.host.id))} (${data.container.image.name})`,
-      type: 'healthcheck.docker.unhealty',
+      type: 'healthcheck.docker.unhealthy',
       data: {
         container: {
           id: data.container.name,
