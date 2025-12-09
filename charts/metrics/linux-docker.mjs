@@ -1,21 +1,21 @@
 export default {
-  containers: ({ data, templates, clone }) => {
+  containers: (params) => {
+    if (!params) return { containers: 'Docker Containers' }
     const series = ['paused', 'running', 'stopped', 'total']
-    const chart = {
-      ...clone(templates.charts.line),
+    return params.lineChart([{
       id: 'containers',
+      yName: 'Count',
+      title: 'Docker Containers',
       series: series.map(name => ({
-        ...templates.series.line,
         name,
-        data: data.map(entry => [entry.timestamp, entry[name]])
+        path: name
       }))
-    }
-    chart.title.text = 'Containers'
-    chart.yAxis.name = 'Count'
-
-    return [ chart ]
+    }], params.data)
   },
-  healthcheck: ({ data, templates, clone, chartGradient }) => {
+
+  healthcheck: (params) => {
+    if (!params) return {}
+    const { data, templates, clone, chartGradient } = params
     // Healthchecks are per container
     const containers = new Set()
     for (const d of data) containers.add(d.name)
@@ -42,19 +42,16 @@ export default {
 
     return Object.values(charts)
   },
-  images: ({ data, templates, clone }) => {
-    const chart = {
-      ...clone(templates.charts.line),
-      id: 'containers',
-      series: [{
-        ...templates.series.line,
-        name: 'Images',
-        data: data.map(entry => [entry.timestamp, entry.count])
-      }]
-    }
-    chart.title.text = 'Container Images'
-    chart.yAxis.name = 'Count'
 
-    return [ chart ]
-  }
+  images: (params) => params
+    ? params.lineChart([{
+        title: 'Docker Images',
+        id: 'Images',
+        yName: 'Images',
+        series: [{
+          name: 'Images',
+          path: 'count'
+        }]
+      }], params.data)
+    : { images: 'Docker Images' },
 }

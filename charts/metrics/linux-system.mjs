@@ -1,43 +1,35 @@
-/*
- * Refer to the Morio documentation for details
- * on how to write a charts plugin
- */
-
-export const moriodata = {
-  throughput: {
-    topics: 'Troughput per topic',
-    processors: 'Troughput per stream processor',
-    'topics.peak': 'Peak troughput per topic',
-    'processors.peak': 'Peak troughput per stream processor',
-  }
-}
-
 export default {
-  diskio: ({ data, templates, clone, formatBytes }) => {
+  diskio: (params) => {
+    if (!params) return {
+      bytes: 'IO Bytes per second',
+      count: 'IO Operations per second',
+    }
+
+    const { data, templates, clone, formatNumber, formatBytes, lineChart } = params
     /*
-     * We have multiple documents per tick
-     * One for each disk. So we first need to compile
-     * a list of all disks for which we have metrics
-     */
+      * We have multiple documents per tick
+      * One for each disk. So we first need to compile
+      * a list of all disks for which we have metrics
+      */
     const disks = new Set()
     for (const d of data) disks.add(d.name)
 
     /*
-     * These metrics are an increasing counter
-     * So we need to calculate the delta from the previous value.
-     * This also means we cannot determine the very first value
-     * reliably.
-     */
+      * These metrics are an increasing counter
+      * So we need to calculate the delta from the previous value.
+      * This also means we cannot determine the very first value
+      * reliably.
+      */
     const charts = { }
     for (const chart of ['bytes', 'count']) {
       charts[chart] = {
         ...clone(templates.charts.line),
         /*
-         * Sort the disk list to maintain the same order
-         * as the chart colors will be determined by this
-         * and not doing so risks colors being swapped by
-         * live updates
-         */
+          * Sort the disk list to maintain the same order
+          * as the chart colors will be determined by this
+          * and not doing so risks colors being swapped by
+          * live updates
+          */
         series: [...disks].map(name => `${name}_read`)
           .concat([...disks].map(name => `${name}_write`))
           .sort().map(name => {
@@ -58,19 +50,19 @@ export default {
         id: chart,
       }
       /*
-       * Rather than having the first value always be zero,
-       * we set it equal to the second value because that makes
-       * the graph easier to interpret.
-       */
+        * Rather than having the first value always be zero,
+        * we set it equal to the second value because that makes
+        * the graph easier to interpret.
+        */
       for (const i in charts[chart].series) {
         charts[chart].series[i].data[0] = charts[chart].series[i].data[1]
       }
     }
 
     // Set titles and yAxis label
-    charts.bytes.title.text = 'IO Bytes per Disk'
+    charts.bytes.title.text = 'IO Bytes per second (per disk)'
     charts.bytes.yAxis.name = 'IO bytes per second'
-    charts.count.title.text = 'IO Ops'
+    charts.count.title.text = 'IO Operations per second (per disk)'
     charts.count.yAxis.name = 'IO operations per second'
 
     // Format bytes
@@ -100,28 +92,30 @@ export default {
 
     return Object.values(charts)
   },
+  filesystem: (params) => {
+    if (!params) return { filesystem: 'Used disk space per mount' }
 
-  filesystem: ({ data, templates, clone, formatBytes }) => {
+    const { data, templates, clone, formatBytes } = params
     /*
-     * We have multiple documents per tick
-     * One for each mount point. So we first need to compile
-     * a list of all mount points for which we have metrics
-     */
+      * We have multiple documents per tick
+      * One for each mount point. So we first need to compile
+      * a list of all mount points for which we have metrics
+      */
     // {\"files\":124440,\"mount_point\":\"/boot\",\"used\":0.6017,\"timestamp\":1763045138521}
     const mounts = new Set()
     for (const m of data.filter(d => d.files)) mounts.add(m.mount_point)
 
     /*
-     * The used field holds a percentage (0 => 1)
-     */
+      * The used field holds a percentage (0 => 1)
+      */
     const used = {
       ...clone(templates.charts.line),
       /*
-       * Sort the mounts list to maintain the same order
-       * as the chart colors will be determined by this
-       * and not doing so risks colors being swapped by
-       * live updates
-       */
+        * Sort the mounts list to maintain the same order
+        * as the chart colors will be determined by this
+        * and not doing so risks colors being swapped by
+        * live updates
+        */
       series: [...mounts].sort()
         .map(name => {
           let prev
@@ -146,8 +140,12 @@ export default {
 
     return [used]
   },
-
-  load: ({ data, templates, clone }) => {
+  load: (params) => {
+    if (!params) return {
+      full: 'Total load',
+      norm: 'Normalized load'
+    }
+    const { clone, templates, data } = params
 
     const full = {
       ...clone(templates.charts.line),
@@ -175,8 +173,10 @@ export default {
 
     return [ full, norm ]
   },
+  memory: (params) => {
+    if (!params) return { usage: 'Memory Usage' }
 
-  memory: ({ data, templates, clone }) => {
+    const { data, templates, clone } = params
 
     const mem = {
       ...clone(templates.charts.line),
@@ -193,8 +193,14 @@ export default {
 
     return [ mem ]
   },
+  network_summary: (params) => {
+    if (!params) return {
+      icmp: 'ICMP',
+      tcp: 'TCP',
+      conns: 'Established TCP Connections'
+    }
 
-  network_summary: ({ data, templates, clone }) => {
+    const { data, templates, clone } = params
     const labels = {
       icmp: {
         indu: 'Dest. Unreach. (in)',
@@ -230,10 +236,10 @@ export default {
         })
       }
       /*
-       * Rather than having the first value always be zero,
-       * we set it equal to the second value because that makes
-       * the graph easier to interpret.
-       */
+        * Rather than having the first value always be zero,
+        * we set it equal to the second value because that makes
+        * the graph easier to interpret.
+        */
       for (const i in charts[chart].series) {
         charts[chart].series[i].data[0] = charts[chart].series[i].data[1]
       }
@@ -259,8 +265,13 @@ export default {
 
     return Object.values(charts)
   },
+  process_summary: (params) => {
+    if (!params) return {
+      procs: 'Processes',
+      threads: 'Threads',
+    }
 
-  process_summary: ({ data, templates, clone }) => {
+    const { data, templates, clone } = params
     const procs = {
       ...clone(templates.charts.line),
       id: 'procs',
@@ -291,8 +302,13 @@ export default {
 
     return [procs, threads]
   },
+  "ressure.cpu": (params) => {
+    if (!params) return {
+      "cpu-pressure": "CPU Pressure",
+      "cpu-stall-us": "Total CPU Stall time in μs",
+    }
 
-  "pressure.cpu": ({ data, templates, clone }) => {
+    const { data, templates, clone } = params
     const pressure = {
       ...clone(templates.charts.line),
       id: 'cpu-pressure',
@@ -320,8 +336,15 @@ export default {
 
     return [ pressure, time ]
   },
+  "pressure.io": (params) => {
+    if (!params) return {
+      "io-pressure-full": "IO Pressure (full)",
+      "io-pressure-some": "IO Pressure (some)",
+      "io-stall-us-full": "Total IO Stall Time in μs (full)",
+      "io-stall-us-some": "Total IO Stall Time in μs (some)",
+    }
 
-  "pressure.io": ({ data, templates, clone }) => {
+    const { data, templates, clone } = params
     const charts = []
     for (const type of ["full", "some"]) {
       const chart = {
@@ -353,8 +376,14 @@ export default {
 
     return charts
   },
-
-  "pressure.memory": ({ data, templates, clone }) => {
+  "pressure.memory": (params) => {
+    if (!params) return {
+      "memory-pressure-full": "Memory Pressure (full)",
+      "memory-pressure-some": "Memory Pressure (some)",
+      "memory-stall-us-full": "Total Memory Stall Time in μs (full)",
+      "memory-stall-us-some": "Total Memory Stall Time in μs (some)",
+    }
+    const { data, templates, clone } = params
     const charts = []
     for (const type of ["full", "some"]) {
       const chart = {
@@ -386,8 +415,13 @@ export default {
 
     return charts
   },
+  socket_summary: (params) => {
+    if (!params) return {
+      sockets: "All Sockets",
+      tcp: "TCP Sockets",
+    }
 
-  socket_summary: ({ data, templates, clone }) => {
+    const { data, templates, clone } = params
     const all = {
       ...clone(templates.charts.line),
       id: 'sockets',
@@ -434,4 +468,3 @@ export default {
     return [all, tcp]
   },
 }
-

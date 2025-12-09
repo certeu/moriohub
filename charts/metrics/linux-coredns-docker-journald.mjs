@@ -1,24 +1,24 @@
 export default {
-  memory: ({ data, templates, clone, formatBytes }) => {
-    const chart = {
-      ...clone(templates.charts.line),
-      id: 'memory',
-      series: ['res', 'virt'].map(name => ({
-        ...templates.series.line,
-        name,
-        data: data.map(entry => [entry.timestamp, entry[name]])
-      }))
-    }
-    chart.title.text = 'Memory Usage'
-    chart.yAxis.name = 'Bytes'
-    chart.yAxis.axisLabel = { formatter: formatBytes }
+  memory: (params) => {
+    if (!params) return { memory: 'Memory Usage' }
 
-    return [ chart ]
+    return params.lineChart([{
+      id: 'memory',
+      yName: 'Bytes',
+      yFmt: (val) => params.formatBytes(val),
+      series: ['res', 'virt'].map(name => ({
+        name,
+        path: name
+      }))
+    }], params.data)
   },
-  network: ({ data, templates, clone, formatBytes }) => {
+
+  network: (params) => {
+    if (!params) return { network: 'Network Bandwidth' }
+    const { data, templates, clone, formatBytes } = params
     const chart = {
       ...clone(templates.charts.line),
-      id: 'memory',
+      id: 'network',
       series: ['egress', 'ingress'].map(name => {
         let prev
         return {
@@ -44,7 +44,7 @@ export default {
       chart.series[i].data[0] = chart.series[i].data[1]
     }
 
-    chart.title.text = 'Network'
+    chart.title.text = 'Network Bandwidth'
     chart.yAxis.name = 'Bps'
     /*
     * This is in bytes, but we turn it into bps
@@ -55,7 +55,10 @@ export default {
 
     return [ chart ]
   },
-  responses: ({ data, templates, clone, formatBytes }) => {
+
+  responses: (params) => {
+    if (!params) return { __aa: 'Per-Zone DNS Responses' }
+    const { data, templates, clone, formatBytes } = params
     // This is a bit more complicated as datasets are per zone/rcodes
     const zones = new Set()
     const rcodes = new Set()
@@ -100,7 +103,10 @@ export default {
 
     return Object.values(charts)
   },
-  requests: ({ data, templates, clone, formatBytes }) => {
+
+  requests: (params) => {
+    if (!params) return { __aa: 'Per-Zone DNS Requests' }
+    const { data, templates, clone, formatBytes } = params
     // This is a bit more complicated as datasets are per zone/proto/type
     const zones = new Set()
     const protos = new Set()
