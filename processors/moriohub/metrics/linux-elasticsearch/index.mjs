@@ -4,6 +4,7 @@
  * by replacing only that specific file
  */
 import cluster_stats from './cluster_stats.mjs'
+import cluster_status from './cluster_status.mjs'
 import index_summary from './index_summary.mjs'
 import node from './node.mjs'
 import node_stats from './node_stats.mjs'
@@ -15,6 +16,7 @@ import node_stats from './node_stats.mjs'
 export default Object.entries({
   index_summary,
   cluster_stats,
+  cluster_status,
   node,
   node_stats,
 }).map(([set, handler]) => typeof handler === 'function'
