@@ -8,6 +8,7 @@
           - cluster_stats
           - index_summary
           - index_recovery
+          - shard
         info: The metricsets to collect on every tick
       METRICS_LINUX_ELASTICSEARCH_API_KEY:
         dflt: ""
