@@ -7,6 +7,7 @@
           - node_stats
           - cluster_stats
           - index_summary
+          - index_recovery
         info: The metricsets to collect on every tick
       METRICS_LINUX_ELASTICSEARCH_API_KEY:
         dflt: ""
@@ -29,6 +30,7 @@
   metricsets: {|{ METRICS_LINUX_ELASTICSEARCH_METRICSETS }|}
   hosts: {|{ METRICS_LINUX_ELASTICSEARCH_HOSTS }|}
   ssl.certificate_authorities: {|{ METRICS_LINUX_ELASTICSEARCH_CAS }|}
+  index_recovery.active_only: true
 # Include username if it is set
 {|#METRICS_LINUX_ELASTICSEARCH_USERNAME|}
   username: {|{ METRICS_LINUX_ELASTICSEARCH_USERNAME }|}
