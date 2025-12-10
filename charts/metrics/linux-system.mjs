@@ -1,11 +1,5 @@
 export default {
-  diskio: (params) => {
-    if (!params) return {
-      bytes: 'IO Bytes per second',
-      count: 'IO Operations per second',
-    }
-
-    const { data, templates, clone, formatNumber, formatBytes, lineChart } = params
+  diskio: ({ data, templates, clone, formatNumber, formatBytes, lineChart }) => {
     /*
       * We have multiple documents per tick
       * One for each disk. So we first need to compile
@@ -92,10 +86,8 @@ export default {
 
     return Object.values(charts)
   },
-  filesystem: (params) => {
-    if (!params) return { filesystem: 'Used disk space per mount' }
 
-    const { data, templates, clone, formatBytes } = params
+  filesystem: ({ data, templates, clone, formatBytes }) => {
     /*
       * We have multiple documents per tick
       * One for each mount point. So we first need to compile
@@ -140,13 +132,8 @@ export default {
 
     return [used]
   },
-  load: (params) => {
-    if (!params) return {
-      full: 'Total load',
-      norm: 'Normalized load'
-    }
-    const { clone, templates, data } = params
 
+  load: ({ clone, templates, data }) => {
     const full = {
       ...clone(templates.charts.line),
       id: 'full',
@@ -173,10 +160,8 @@ export default {
 
     return [ full, norm ]
   },
-  memory: (params) => {
-    if (!params) return { usage: 'Memory Usage' }
 
-    const { data, templates, clone } = params
+  memory: ({ data, templates, clone }) => {
 
     const mem = {
       ...clone(templates.charts.line),
@@ -193,14 +178,8 @@ export default {
 
     return [ mem ]
   },
-  network_summary: (params) => {
-    if (!params) return {
-      icmp: 'ICMP',
-      tcp: 'TCP',
-      conns: 'Established TCP Connections'
-    }
 
-    const { data, templates, clone } = params
+  network_summary: ({ data, templates, clone }) => {
     const labels = {
       icmp: {
         indu: 'Dest. Unreach. (in)',
@@ -265,13 +244,8 @@ export default {
 
     return Object.values(charts)
   },
-  process_summary: (params) => {
-    if (!params) return {
-      procs: 'Processes',
-      threads: 'Threads',
-    }
 
-    const { data, templates, clone } = params
+  process_summary: ({ data, templates, clone }) => {
     const procs = {
       ...clone(templates.charts.line),
       id: 'procs',
@@ -302,13 +276,8 @@ export default {
 
     return [procs, threads]
   },
-  "ressure.cpu": (params) => {
-    if (!params) return {
-      "cpu-pressure": "CPU Pressure",
-      "cpu-stall-us": "Total CPU Stall time in μs",
-    }
 
-    const { data, templates, clone } = params
+  pressure.cpu: ({ data, templates, clone }) => {
     const pressure = {
       ...clone(templates.charts.line),
       id: 'cpu-pressure',
@@ -336,15 +305,8 @@ export default {
 
     return [ pressure, time ]
   },
-  "pressure.io": (params) => {
-    if (!params) return {
-      "io-pressure-full": "IO Pressure (full)",
-      "io-pressure-some": "IO Pressure (some)",
-      "io-stall-us-full": "Total IO Stall Time in μs (full)",
-      "io-stall-us-some": "Total IO Stall Time in μs (some)",
-    }
 
-    const { data, templates, clone } = params
+  pressure.io: ({ data, templates, clone }) => {
     const charts = []
     for (const type of ["full", "some"]) {
       const chart = {
@@ -376,14 +338,8 @@ export default {
 
     return charts
   },
-  "pressure.memory": (params) => {
-    if (!params) return {
-      "memory-pressure-full": "Memory Pressure (full)",
-      "memory-pressure-some": "Memory Pressure (some)",
-      "memory-stall-us-full": "Total Memory Stall Time in μs (full)",
-      "memory-stall-us-some": "Total Memory Stall Time in μs (some)",
-    }
-    const { data, templates, clone } = params
+
+  pressure.memory: ({ data, templates, clone }) => {
     const charts = []
     for (const type of ["full", "some"]) {
       const chart = {
@@ -415,13 +371,8 @@ export default {
 
     return charts
   },
-  socket_summary: (params) => {
-    if (!params) return {
-      sockets: "All Sockets",
-      tcp: "TCP Sockets",
-    }
 
-    const { data, templates, clone } = params
+  socket_summary: ({ data, templates, clone }) => {
     const all = {
       ...clone(templates.charts.line),
       id: 'sockets',

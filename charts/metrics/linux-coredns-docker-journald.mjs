@@ -1,79 +1,42 @@
 export default {
-  memory: (params) => {
-    if (!params) return { memory: 'Memory Usage' }
+  memory: ({ data, formatBytes, lineChart }) => lineChart([{
+    id: 'memory',
+    title: 'Memory Usage',
+    yName: 'Bytes',
+    yFmt: (val) => formatBytes(val),
+    series: ['res', 'virt'].map(name => ({
+      name,
+      path: name
+    }))
+  }], data),
 
-    return params.lineChart([{
-      id: 'memory',
-      yName: 'Bytes',
-      yFmt: (val) => params.formatBytes(val),
-      series: ['res', 'virt'].map(name => ({
-        name,
-        path: name
-      }))
-    }], params.data)
-  },
+  network: ({ data, formatBytes, lineChart }) => lineChart([{
+    id: 'network',
+    title: 'Network Bandwidth',
+    yFmt: (val) => formatBytes(val*8, '/s').replace('B', 'b'),
+    series: ['egress', 'ingress'].map(name => ({ name, path: name }))
+  }], data),
 
-  network: (params) => {
-    if (!params) return { network: 'Network Bandwidth' }
-    const { data, templates, clone, formatBytes } = params
-    const chart = {
-      ...clone(templates.charts.line),
-      id: 'network',
-      series: ['egress', 'ingress'].map(name => {
-        let prev
-        return {
-          ...templates.series.line,
-          name,
-          data: data.map((entry, i) => {
-            let val
-            if (i === 0) val = 0
-            else val = (entry[name] - prev)/30
-            prev = entry[name]
-
-            return [entry.timestamp, val]
-          })
-        }
-      })
-    }
-    /*
-    * Rather than having the first value always be zero,
-    * we set it equal to the second value because that makes
-    * the graph easier to interpret.
-    */
-    for (const i in chart.series) {
-      chart.series[i].data[0] = chart.series[i].data[1]
-    }
-
-    chart.title.text = 'Network Bandwidth'
-    chart.yAxis.name = 'Bps'
-    /*
-    * This is in bytes, but we turn it into bps
-    * Since we divided by 30 earlier it is now bytes per second
-    * so we multiply by 8 and lowercase the B in teh label to get bps
-    */
-    chart.yAxis.axisLabel = { formatter: (val) => formatBytes(val*8, '/s').replace('B', 'b') }
-
-    return [ chart ]
-  },
-
-  responses: (params) => {
-    if (!params) return { __aa: 'Per-Zone DNS Responses' }
-    const { data, templates, clone, formatBytes } = params
+  responses: ({ data, templates, clone, formatBytes }) => {
     // This is a bit more complicated as datasets are per zone/rcodes
-    const zones = new Set()
-    const rcodes = new Set()
+    let zones = new Set()
+    let rcodes = new Set()
     for (const d of data) {
       zones.add(d.zone)
       rcodes.add(d.rcode)
     }
+    zones = [...zones]
+    zones.sort()
+    rcodes = [...rcodes]
+    rcodes.sort()
 
     // Deal with many-zones/many-rcodes
     const charts = {}
-    for (const zone of [...zones].sort()) {
+    for (const zone of zones) {
       charts[zone] = {
         ...clone(templates.charts.line),
         id: zone,
-        series: [...rcodes].sort().map(rcode => {
+        series: rcodes.map(rcode => {
           let prev
           return {
             ...templates.series.line,
@@ -104,30 +67,34 @@ export default {
     return Object.values(charts)
   },
 
-  requests: (params) => {
-    if (!params) return { __aa: 'Per-Zone DNS Requests' }
-    const { data, templates, clone, formatBytes } = params
+  requests: ({ data, templates, clone, formatBytes }) => {
     // This is a bit more complicated as datasets are per zone/proto/type
-    const zones = new Set()
-    const protos = new Set()
-    const types = new Set()
+    let zones = new Set()
+    let protos = new Set()
+    let types = new Set()
     for (const d of data) {
       zones.add(d.zone)
       protos.add(d.proto)
       types.add(d.type)
     }
-    if ([...protos].length > 1) {
+    zones = [...zones]
+    zones.sort()
+    protos = [...protos]
+    protos.sort()
+    types = [...types]
+    types.sort()
+    if (protos.length > 1) {
       console.log('We do not (currently) support more than one type in the CoreDNS requests metrics')
       return []
     }
 
     // Deal with many-zones/many-types
     const charts = {}
-    for (const zone of [...zones].sort()) {
+    for (const zone of zones) {
       charts[zone] = {
         ...clone(templates.charts.line),
         id: zone,
-        series: [...types].sort().map(type => {
+        series: types.map(type => {
           let prev
           return {
             ...templates.series.line,

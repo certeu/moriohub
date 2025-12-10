@@ -1,17 +1,3 @@
-/*
- * Refer to the Morio documentation for details
- * on how to write a charts plugin
- */
-
-export const moriodata = {
-  throughput: {
-    topics: 'Troughput per topic',
-    processors: 'Troughput per stream processor',
-    'topics.peak': 'Peak troughput per topic',
-    'processors.peak': 'Peak troughput per stream processor',
-  }
-}
-
 export default {
   throughput: ({ data, templates, clone }) => {
     const eps = 'Events per second'
@@ -65,6 +51,5 @@ export default {
     procsP.yAxis.name = eps
 
     return [topics, procs, topicsP, procsP]
-  }
+  },
 }
-
