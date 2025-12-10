@@ -4,9 +4,11 @@
  * by replacing only that specific file
  */
 import cluster_stats from './cluster_stats.mjs'
+import index_recovery from './index_recovery.mjs'
 import index_summary from './index_summary.mjs'
 import node from './node.mjs'
 import node_stats from './node_stats.mjs'
+import shard from './shard.mjs'
 
 /*
  * Morio stream processors to handle metrics from the linux-system module
@@ -14,9 +16,11 @@ import node_stats from './node_stats.mjs'
  */
 export default Object.entries({
   index_summary,
+  index_recovery,
   cluster_stats,
   node,
   node_stats,
+  shard,
 }).map(([set, handler]) => typeof handler === 'function'
   ? config(set, handler)
   : undefined
