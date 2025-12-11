@@ -8,7 +8,6 @@
           - cluster_stats
           - index_summary
           - index_recovery
-          - shard
         info: The metricsets to collect on every tick
       METRICS_LINUX_ELASTICSEARCH_API_KEY:
         dflt: ""
@@ -44,3 +43,36 @@
 {|#METRICS_LINUX_ELASTICSEARCH_API_KEY|}
   api_key: {|{ METRICS_LINUX_ELASTICSEARCH_API_KEY }|}
 {|/METRICS_LINUX_ELASTICSEARCH_API_KEY|}
+
+# Shards are hard to consume the way the Elasticsearch module handles
+# them as there is 1 event per shard. This is a side-effect of the
+# shards API entrypoint returning a top-level array. So even if we
+# pull them manually, Metricbeat will turn each entry in an event.
+# So instead, we grab the data from the routing table in the cluster state.
+- module: http
+  metricsets:
+    - json
+  period: "{| MORIO_TICK |}"
+  hosts: {|{ METRICS_LINUX_ELASTICSEARCH_HOSTS }|}
+  ssl.certificate_authorities: {|{ METRICS_LINUX_ELASTICSEARCH_CAS }|}
+  namespace: "morio.elasticsearch"
+  path: "/_cluster/state"
+  query:
+    metric: "nodes.routing_table"
+# Include username if it is set
+{|#METRICS_LINUX_ELASTICSEARCH_USERNAME|}
+  username: {|{ METRICS_LINUX_ELASTICSEARCH_USERNAME }|}
+{|/METRICS_LINUX_ELASTICSEARCH_USERNAME|}
+# Include password if it is set
+{|#METRICS_LINUX_ELASTICSEARCH_PASSWORD|}
+  password: {|{ METRICS_LINUX_ELASTICSEARCH_PASSWORD }|}
+{|/METRICS_LINUX_ELASTICSEARCH_PASSWORD|}
+# Include api_key if it is set
+  processors:
+    - drop_fields:
+      fields:
+        - morio.elasticsearch.nodes_versions
+      ignore_missing: true
+    - add_labels:
+        labels:
+          morio.dataset: shardstate
