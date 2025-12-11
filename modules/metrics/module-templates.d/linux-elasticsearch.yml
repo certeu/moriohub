@@ -58,7 +58,7 @@
   namespace: "morio.elasticsearch"
   path: "/_cluster/state"
   query:
-    metric: "nodes.routing_table"
+    metric: "nodes,routing_table"
 # Include username if it is set
 {|#METRICS_LINUX_ELASTICSEARCH_USERNAME|}
   username: {|{ METRICS_LINUX_ELASTICSEARCH_USERNAME }|}
