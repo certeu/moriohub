@@ -70,9 +70,9 @@
 # Include api_key if it is set
   processors:
     - drop_fields:
-      fields:
-        - morio.elasticsearch.nodes_versions
-      ignore_missing: true
+        fields:
+          - morio.elasticsearch.nodes_versions
+        ignore_missing: true
     - add_labels:
         labels:
           morio.dataset: shardstate
