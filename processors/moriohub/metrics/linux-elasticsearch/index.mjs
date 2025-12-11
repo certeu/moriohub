@@ -8,7 +8,7 @@ import index_recovery from './index_recovery.mjs'
 import index_summary from './index_summary.mjs'
 import node from './node.mjs'
 import node_stats from './node_stats.mjs'
-import shard from './shard.mjs'
+import shardstate from './shardstate.mjs'
 
 /*
  * Morio stream processors to handle metrics from the linux-system module
@@ -20,7 +20,7 @@ export default Object.entries({
   cluster_stats,
   node,
   node_stats,
-  shard,
+  shardstate,
 }).map(([set, handler]) => typeof handler === 'function'
   ? config(set, handler)
   : undefined
