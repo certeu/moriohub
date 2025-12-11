@@ -55,7 +55,7 @@
   period: "{| MORIO_TICK |}"
   hosts: {|{ METRICS_LINUX_ELASTICSEARCH_HOSTS }|}
   ssl.certificate_authorities: {|{ METRICS_LINUX_ELASTICSEARCH_CAS }|}
-  namespace: "morio.elasticsearch"
+  namespace: "elasticsearch"
   path: "/_cluster/state"
   query:
     metric: "nodes,routing_table"
@@ -71,7 +71,8 @@
   processors:
     - drop_fields:
         fields:
-          - morio.elasticsearch.nodes_versions
+          - http.elasticsearch.nodes_features
+          - http.elasticsearch.nodes_versions
         ignore_missing: true
     - add_labels:
         labels:
