@@ -3,7 +3,10 @@
  */
 export default function node_stats (params) {
   if (params.settings.cache) {
-    // Default caching
-    params.tools.cache.metricset(params.data.elasticsearch.node.stats, params)
+    if (params.data.elasticsearch?.node?.stats) {
+      // Default caching
+      params.tools.cache.metricset(params.data.elasticsearch.node.stats, params)
+    }
+    else params.tools.note(`No elasticsearch.node.stats found in metrics`, params.data)
   }
 }
