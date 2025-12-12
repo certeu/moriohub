@@ -749,4 +749,73 @@ export default {
       }))
     },
   ], data),
+
+  shardstate: ({ data, templates, clone, lineChart, chartGradient }) => lineChart([
+      {
+        id: 'state',
+        title: `Shard states on cluster ${data[0].cluster}`,
+        yValue: 'Shards',
+        series: [
+          ...data[0].nodes.map(node => ({
+            name: `Initializing shards on ${node}`,
+            path: ['shards', node, 'initializing'],
+          })),
+          ...data[0].nodes.map(node => ({
+            name: `Relocating shards on ${node}`,
+            path: ['shards', node, 'relocating'],
+          })),
+          ...data[0].nodes.map(node => ({
+            name: `Unassigned shards on ${node}`,
+            path: ['shards', node, 'unassigned'],
+          })),
+          ...data[0].nodes.map(node => ({
+            name: `Started shards on ${node}`,
+            path: ['shards', node, 'started'],
+          })),
+        ]
+      },
+      {
+        id: 'shards',
+        title: `Shard distribution on cluster ${data[0].cluster}`,
+        yValue: 'Shards',
+        series: [
+          ...data[0].nodes.map(node => ({
+            name: `Primary on ${node}`,
+            path: ['shards', node, 'pri'],
+          })),
+          ...data[0].nodes.map(node => ({
+            name: `Replica on ${node}`,
+            path: ['shards', node, 'rep'],
+            valFmt: (val) => (val * -1),
+          })),
+        ]
+      },
+      {
+        id: 'fra',
+        title: `Failed shard replication attempts on cluster ${data[0].cluster}`,
+        yValue: 'Attempts',
+        series: data[0].nodes.map(node => ({
+          name: node,
+          path: ['shards', node, 'fra'],
+        }))
+      },
+      {
+        id: 'prishards',
+        title: `Primary shard distribution on cluster ${data[0].cluster}`,
+        yValue: 'Shards',
+        series: data[0].nodes.map(node => ({
+          name: node,
+          path: ['shards', node, 'pri'],
+        }))
+      },
+      {
+        id: 'repshards',
+        title: `Replica shard distribution on cluster ${data[0].cluster}`,
+        yValue: 'Shards',
+        series: data[0].nodes.map(node => ({
+          name: node,
+          path: ['shards', node, 'rep'],
+        }))
+      },
+    ], data),
 }

@@ -20,7 +20,7 @@ export const rules = {
     "linux-system.started-session",
   ],
   on: {
-    "elasticsearch.cluster.status.yellow": presets.healthcheck,
+    "elasticsearch.cluster.status.yellow": { notify: true, expire: 45, backoff: true },
     "elasticsearch.cluster.status.red": presets.alarm,
     "elasticsearch.cluster.status.unknown": presets.alert,
     "healthcheck.docker.unhealthy": presets.healthcheck,
