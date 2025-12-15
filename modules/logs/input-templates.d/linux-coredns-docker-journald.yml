@@ -56,3 +56,9 @@
             to: client.port
         fail_on_error: false
         ignore_missing: true
+
+    # Set dataset
+    - add_labels:
+        labels:
+          morio.dataset: requests
+
