@@ -277,7 +277,7 @@ export default {
     return [procs, threads]
   },
 
-  pressure.cpu: ({ data, templates, clone }) => {
+  "pressure.cpu": ({ data, templates, clone }) => {
     const pressure = {
       ...clone(templates.charts.line),
       id: 'cpu-pressure',
@@ -306,7 +306,7 @@ export default {
     return [ pressure, time ]
   },
 
-  pressure.io: ({ data, templates, clone }) => {
+  "pressure.io": ({ data, templates, clone }) => {
     const charts = []
     for (const type of ["full", "some"]) {
       const chart = {
@@ -339,7 +339,7 @@ export default {
     return charts
   },
 
-  pressure.memory: ({ data, templates, clone }) => {
+  "pressure.memory": ({ data, templates, clone }) => {
     const charts = []
     for (const type of ["full", "some"]) {
       const chart = {
