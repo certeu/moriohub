@@ -16,14 +16,16 @@ export default function shardstate (params) {
     for (const index in indices) {
       for (const [id, shardlist] of Object.entries(indices[index].shards)) {
         for (const shard of shardlist) {
-          shards[nodes[shard.node]].push({
-            ...shard,
-            fra: shard.relocation_failure_info?.failed_attempts || 0,
-            state: shard.state.toLowerCase(),
-            node: undefined,
-            allocation_id: undefined,
-            relocation_failure_info: undefined,
-          })
+          if (shards[nodes[shard.node]]) {
+            shards[nodes[shard.node]].push({
+              ...shard,
+              fra: shard.relocation_failure_info?.failed_attempts || 0,
+              state: shard.state.toLowerCase(),
+              node: undefined,
+              allocation_id: undefined,
+              relocation_failure_info: undefined,
+            })
+          }
         }
       }
     }
