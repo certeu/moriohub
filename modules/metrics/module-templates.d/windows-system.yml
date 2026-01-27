@@ -29,57 +29,340 @@
     - filesystem
 
 - module: windows
+  metricsets:
+    - services
+  period: {| METRICS_WINDOWS_SYSTEM_INTERVAL_SERVICES |}
+
+- module: windows
   period: {| MORIO_TICK |}
   metricsets:
     - perfmon
   perfmon:
-    ignore_non_existing_counters: true
     group_measurements_by_instance: true
+    ignore_non_existing_counters: true
     queries:
-      - object: "process"
-        instance:
-          - "svchost*"
-          - "conhost*"
+      # CPU Performance
+      - object: Processor
+        instance: ["_Total"]
         counters:
-          - name: "%Processor Time"
+          - name: "% Processor Time"
+            field: cpu.pct
+            format: float
+          - name: "% Privileged Time"
+            field: cpu.privileged_time.pct
+            format: float
+          - name: "% Interrupt Time"
+            field: cpu.interrupt_time.pct
+            format: float
+          - name: "% DPC Time"
+            field: cpu.dpc_time.pct
+            format: float
+
+      # Memory Performance
+      - object: Memory
+        counters:
+          - name: "Available MBytes"
+            field: memory.available.mb
+            format: float
+          - name: "% Committed Bytes In Use"
+            field: memory.committed.pct
+            format: float
+          - name: "Cache Faults/sec"
+            field: memory.cache_faults_per_sec
+            format: float
+          - name: "Page Faults/sec"
+            field: memory.page_faults_per_sec
+            format: float
+          - name: "Pages/sec"
+            field: memory.pages_per_sec
+            format: float
+
+      # Disk Performance
+      - object: PhysicalDisk
+        instance: ["*"]
+        counters:
+          - name: "% Disk Time"
+            field: disk.time.pct
+            format: float
+          - name: "Avg. Disk Queue Length"
+            field: disk.queue_length.avg
+            format: float
+          - name: "Disk Reads/sec"
+            field: disk.reads_per_sec
+            format: float
+          - name: "Disk Writes/sec"
+            field: disk.writes_per_sec
+            format: float
+          - name: "Avg. Disk sec/Read"
+            field: disk.read_time.avg_sec
+            format: float
+          - name: "Avg. Disk sec/Write"
+            field: disk.write_time.avg_sec
+            format: float
+
+      # Logical Disk
+      - object: LogicalDisk
+        instance: ["*"]
+        counters:
+          - name: "% Free Space"
+            field: logical_disk.free_space.pct
+            format: float
+
+      # Network Performance
+      - object: Network Interface
+        instance: ["*"]
+        counters:
+          - name: "Bytes Total/sec"
+            field: network.bytes_total_per_sec
+            format: float
+          - name: "Packets Received Errors"
+            field: network.packets_received_errors
+            format: float
+          - name: "Packets Outbound Errors"
+            field: network.packets_outbound_errors
+            format: float
+          - name: "Current Bandwidth"
+            field: network.bandwidth.current
+            format: float
+
+      # System Performance
+      - object: System
+        counters:
+          - name: "System Up Time"
+            field: system.uptime
+            format: float
+          - name: "Processes"
+            field: system.processes
+            format: long
+          - name: "Threads"
+            field: system.threads
+            format: long
+          - name: "Context Switches/sec"
+            field: system.context_switches_per_sec
+            format: float
+          - name: "System Calls/sec"
+            field: system.calls_per_sec
+            format: float
+          - name: "Processor Queue Length"
+            field: system.processor_queue_length
+            format: long
+
+      # Process Monitoring (key system processes and security-relevant)
+      - object: Process
+        instance: ["svchost*", "lsass", "services", "csrss", "winlogon", "explorer"]
+        counters:
+          - name: "% Processor Time"
             field: time.processor.pct
-            format: "float"
+            format: float
           - name: "Thread Count"
             field: thread_count
-          - name: "IO Read Operations/sec"
-      - object: "PhysicalDisk"
-        field: "disk"
-        instance: "*"
-        counters:
-          - name: "Disk Writes/sec"
-          - name: "% Disk Write Time"
-            field: "write_time"
-            format: "float"
+            format: long
+          - name: "Handle Count"
+            field: handle_count
+            format: long
+          - name: "Working Set"
+            field: working_set
+            format: long
+          - name: "Private Bytes"
+            field: private_bytes
+            format: long
 
-- module: windows
-  metricsets:
-    - services
-  period: {| METRICS_WINDOWS_SYSTEM_INTERVAL_SERVICES |}
+      # Security: Failed Logons (requires Security log to be monitored)
+      - object: Security System-Wide Statistics
+        counters:
+          - name: "NTLM Authentications"
+            field: security.ntlm_auth
+            format: float
+          - name: "Kerberos Authentications"
+            field: security.kerberos_auth
+            format: float
+
+      # Paging File
+      - object: Paging File
+        instance: ["_Total"]
+        counters:
+          - name: "% Usage"
+            field: paging_file.usage.pct
+            format: float
 
 - module: windows
   metricsets:
     - wmi
   period: {| METRICS_WINDOWS_SYSTEM_INTERVAL_WMI |}
   wmi:
-    namespace: "root\\cimv2"
-    warning_treshold: 10m
+    namespace: root\cimv2
     include_queries: true
     include_null_properties: false
     include_empty_strings_properties: false
     max_rows_per_query: 100
+    warning_threshold: 10m
     queries:
+      # Operating System Info
       - class: Win32_OperatingSystem
         properties:
+          - Caption
+          - Version
+          - BuildNumber
+          - OSArchitecture
+          - LastBootUpTime
+          - LocalDateTime
+          - TotalVisibleMemorySize
           - FreePhysicalMemory
+          - TotalVirtualMemorySize
+          - FreeVirtualMemory
+          - SizeStoredInPagingFiles
           - FreeSpaceInPagingFiles
+          - NumberOfProcesses
           - NumberOfUsers
         where: ""
-      - class: Wind32_PowerPlan
-        properties: []
+
+      # Computer System Info
+      - class: Win32_ComputerSystem
+        properties:
+          - Name
+          - Domain
+          - DomainRole
+          - Manufacturer
+          - Model
+          - TotalPhysicalMemory
+          - NumberOfLogicalProcessors
+          - NumberOfProcessors
+        where: ""
+
+      # Disk Drive Health
+      - class: Win32_DiskDrive
+        properties:
+          - DeviceID
+          - Model
+          - Size
+          - Status
+          - InterfaceType
+          - MediaType
+        where: ""
+
+      # Logical Disk Space
+      - class: Win32_LogicalDisk
+        properties:
+          - DeviceID
+          - DriveType
+          - FileSystem
+          - FreeSpace
+          - Size
+          - VolumeName
+        where: "DriveType = 3"  # Local disk only
+
+      # Network Adapter Configuration
+      - class: Win32_NetworkAdapterConfiguration
+        properties:
+          - Description
+          - IPAddress
+          - IPSubnet
+          - MACAddress
+          - DHCPEnabled
+          - DNSDomain
+          - DNSServerSearchOrder
+          - DefaultIPGateway
+        where: "IPEnabled = True"
+
+      # Security: User Accounts
+      - class: Win32_UserAccount
+        properties:
+          - Name
+          - Domain
+          - LocalAccount
+          - Disabled
+          - Lockout
+          - PasswordExpires
+          - PasswordRequired
+          - SID
+        where: "LocalAccount = True"
+
+      # Security: Security Settings
+      - class: Win32_AccountSID
+        properties:
+          - Element
+          - Setting
+        where: ""
+
+      # Security: Windows Firewall Status (Windows 8+)
+      - class: MSFT_NetFirewallProfile
+        namespace: root\standardcimv2
+        properties:
+          - Name
+          - Enabled
+          - DefaultInboundAction
+          - DefaultOutboundAction
+        where: ""
+
+      # Security: AntiVirus Products (requires Windows Security Center)
+      - class: AntiVirusProduct
+        namespace: root\SecurityCenter2
+        properties:
+          - displayName
+          - instanceGuid
+          - pathToSignedProductExe
+          - pathToSignedReportingExe
+          - productState
+          - timestamp
+        where: ""
+
+      # Power Plan (Active)
+      - class: Win32_PowerPlan
+        namespace: root\cimv2\power
+        properties:
+          - ElementName
+          - InstanceID
+          - IsActive
         where: "IsActive = True"
-        namespace: "root\\cimv2\\power"
+
+      # Services (Security-Critical)
+      - class: Win32_Service
+        properties:
+          - Name
+          - DisplayName
+          - State
+          - StartMode
+          - Status
+          - ProcessId
+        where: "Name = 'WinDefend' OR Name = 'wscsvc' OR Name = 'wuauserv' OR Name = 'BITS' OR Name = 'EventLog' OR Name = 'MpsSvc'"
+
+      # Security: Startup Programs (potential security risk)
+      - class: Win32_StartupCommand
+        properties:
+          - Caption
+          - Command
+          - Location
+          - User
+        where: ""
+
+      # System Drivers (for anomaly detection)
+      - class: Win32_SystemDriver
+        properties:
+          - Name
+          - DisplayName
+          - State
+          - Status
+          - PathName
+          - StartMode
+        where: "State = 'Running'"
+
+      # Security: Scheduled Tasks (limited info from WMI, consider Task Scheduler API)
+      - class: Win32_ScheduledJob
+        properties:
+          - JobId
+          - Name
+          - Owner
+          - Command
+          - DaysOfMonth
+          - DaysOfWeek
+          - Status
+        where: ""
+
+      # Event Log Configuration
+      - class: Win32_NTEventlogFile
+        properties:
+          - LogfileName
+          - MaxFileSize
+          - NumberOfRecords
+          - OverwritePolicy
+        where: "LogfileName = 'Security' OR LogfileName = 'System' OR LogfileName = 'Application'"
