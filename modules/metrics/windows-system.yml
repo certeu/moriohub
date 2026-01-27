@@ -1,0 +1,85 @@
+- moriodata:
+    info: "Collects metrics from Windows systems"
+    vars:
+      METRICS_WINDOWS_SYSTEM_INTERVAL_FILESYSTEM:
+        dflt: 10m
+        info: The interval to use for collecting filesystem data
+      METRICS_WINDOWS_SYSTEM_INTERVAL_SERVICES:
+        dflt: 60s
+        info: The interval to use for querying services
+      METRICS_WINDOWS_SYSTEM_INTERVAL_WMI:
+        dflt: 10m
+        info: The interval to use for querying WMI
+      METRICS_WINDOWS_SYSTEM_METRICSETS_ALWAYS:
+        dflt:
+          - cpu
+          - diskio
+          - memory
+          - process_summary
+          - socket_summary
+        info: The metricsets to collect on every tick
+
+- module: system
+  period: {| MORIO_TICK |}
+  metricsets: {|{ METRICS_WINDOWS_SYSTEM_METRICSETS_ALWAYS }|}
+
+- module: system
+  period: {| METRICS_WINDOWS_SYSTEM_INTERVAL_FILESYSTEM |}
+  metricsets:
+    - filesystem
+
+- module: windows
+  period: {| MORIO_TICK |}
+  metricsets:
+    - perfmon
+  perfmon:
+    ignore_non_existing_counters: true
+    group_measurements_by_instance: true
+    queries:
+      - object: "process"
+        instance:
+          - "svchost*"
+          - "conhost*"
+        counters:
+          - name: "%Processor Time"
+            field: time.processor.pct
+            format: "float"
+          - name: "Thread Count"
+            field: thread_count
+          - name: "IO Read Operations/sec"
+      - object: "PhysicalDisk"
+        field: "disk"
+        instance: "*"
+        counters:
+          - name: "Disk Writes/sec"
+          - name: "% Disk Write Time"
+            field: "write_time"
+            format: "float"
+
+- module: windows
+  metricsets:
+    - services
+  period: {| METRICS_WINDOWS_SYSTEM_INTERVAL_SERVICES |}
+
+- module: windows
+  metricsets:
+    - wmi
+  period: {| METRICS_WINDOWS_SYSTEM_INTERVAL_WMI |}
+  wmi:
+    namespace: "root\\cimv2"
+    warning_treshold: 10m
+    include_queries: true
+    include_null_properties: false
+    include_empty_strings_properties: false
+    max_rows_per_query: 100
+    queries:
+      - class: Win32_OperatingSystem
+        properties:
+          - FreePhysicalMemory
+          - FreeSpaceInPagingFiles
+          - NumberOfUsers
+        where: ""
+      - class: Wind32_PowerPlan
+        properties: []
+        where: "IsActive = True"
+        namespace: "root\\cimv2\\power"
