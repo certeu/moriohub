@@ -269,8 +269,8 @@
 - name: Microsoft-Windows-Bits-Client/Operational
   dataset: bits
   event_id:
-    - 3  # BITS transfer created
-    - 4  # BITS transfer completed
+    - 3   # BITS transfer created
+    - 4   # BITS transfer completed
     - 59  # BITS started a download job
     - 60  # BITS stopped transferring
 
