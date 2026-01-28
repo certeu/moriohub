@@ -1,0 +1,309 @@
+# To get the best result, please make sure to:
+#
+# - Enable Command Line Logging:
+#   reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System\Audit" /v ProcessCreationIncludeCmdLine_Enabled /t REG_DWORD /d 1 /f
+#
+# - Enable PowerShell Logging:
+#   - Script Block Logging:
+#     reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging" /v EnableScriptBlockLogging /t REG_DWORD /d 1 /f
+#   - Module Logging:
+#     reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ModuleLogging" /v EnableModuleLogging /t REG_DWORD /d 1 /f
+#
+- moriodata:
+    info: "Collects Event logs from Windows systems"
+    vars:
+      EVENTLOGS_WINDOWS_SYSTEM_SYSMON_INSTALLED:
+        dflt: false
+        info: Whether or not sysmon is installed/enabled on the local system
+
+# SECURITY LOG - Authentication, Authorization, and Security Events
+- name: Security
+  dataset: security
+  event_id:
+    # Account Logon Events
+    - 4624  # Successful logon
+    - 4625  # Failed logon
+    - 4634  # Logoff
+    - 4647  # User initiated logoff
+    - 4648  # Logon using explicit credentials (RunAs)
+    - 4672  # Special privileges assigned to new logon
+    - 4768  # Kerberos TGT requested
+    - 4769  # Kerberos service ticket requested
+    - 4770  # Kerberos service ticket renewed
+    - 4771  # Kerberos pre-authentication failed
+    - 4776  # NTLM authentication
+    - 4778  # Session reconnected (RDP)
+    - 4779  # Session disconnected (RDP)
+
+    # Account Management
+    - 4720  # User account created
+    - 4722  # User account enabled
+    - 4723  # Password change attempted
+    - 4724  # Password reset attempted
+    - 4725  # User account disabled
+    - 4726  # User account deleted
+    - 4738  # User account changed
+    - 4740  # User account locked out
+    - 4767  # User account unlocked
+    - 4781  # Account name changed
+
+    # Group Management
+    - 4727  # Security-enabled global group created
+    - 4728  # Member added to security-enabled global group
+    - 4729  # Member removed from security-enabled global group
+    - 4730  # Security-enabled global group deleted
+    - 4731  # Security-enabled local group created
+    - 4732  # Member added to security-enabled local group
+    - 4733  # Member removed from security-enabled local group
+    - 4734  # Security-enabled local group deleted
+    - 4735  # Security-enabled local group changed
+    - 4737  # Security-enabled global group changed
+    - 4754  # Security-enabled universal group created
+    - 4756  # Member added to security-enabled universal group
+    - 4757  # Member removed from security-enabled universal group
+    - 4758  # Security-enabled universal group deleted
+
+    # Security Policy Changes
+    - 4719  # System audit policy changed
+    - 4739  # Domain policy changed
+    - 4713  # Kerberos policy changed
+    - 4716  # Trusted domain information modified
+    - 4817  # Auditing settings changed
+
+    # Privilege Use
+    - 4673  # Sensitive privilege use
+    - 4674  # Operation attempted on privileged object
+
+    # Process Tracking (Critical for threat detection)
+    - 4688  # New process created
+    - 4689  # Process exited
+    - 4696  # Primary token assigned to process
+
+    # Object Access
+    - 4663  # Attempt to access an object
+    - 4656  # Handle to an object requested
+    - 4658  # Handle to an object closed
+    - 4660  # Object deleted
+    - 4670  # Permissions on an object changed
+
+    # System Events
+    - 4608  # Windows is starting up
+    - 4609  # Windows is shutting down
+    - 4616  # System time changed
+    - 4697  # Service installed
+    - 4698  # Scheduled task created
+    - 4699  # Scheduled task deleted
+    - 4700  # Scheduled task enabled
+    - 4701  # Scheduled task disabled
+    - 4702  # Scheduled task updated
+
+    # Network Share Access
+    - 5140  # Network share accessed
+    - 5142  # Network share added
+    - 5143  # Network share modified
+    - 5144  # Network share deleted
+    - 5145  # Network share check to see access granted
+
+    # Windows Filtering Platform
+    - 5156  # Connection allowed
+    - 5157  # Connection blocked
+    - 5158  # Bind allowed
+    - 5159  # Bind blocked
+
+    # Critical Security Events
+    - 1100  # Event logging service shut down
+    - 1102  # Audit log cleared (MAJOR SECURITY INDICATOR)
+    - 1104  # Security log full
+    - 1105  # Event log automatic backup
+    - 1108  # Event logging service encountered error
+
+    # Windows Defender Credential Guard
+    - 5038  # Code integrity check failed
+    - 6281  # Code integrity check passed
+
+    # Token Manipulation (Advanced threats)
+    - 4985  # State of transaction changed
+
+# SYSTEM LOG - System Events, Service Issues, Hardware Problems
+- name: System
+  dataset: system
+  level: warning, error, critical
+  event_id:
+    - 1     # System errors
+    - 7     # Bad blocks found
+    - 7030  # Service marked as interactive
+    - 7034  # Service terminated unexpectedly
+    - 7035  # Service control command sent
+    - 7036  # Service entered running/stopped state
+    - 7040  # Service start type changed
+    - 7045  # Service installed
+    - 104   # Event log cleared
+    - 1001  # Windows error reporting
+    - 1074  # System restart or shutdown
+    - 1076  # System shutdown reason
+    - 6005  # Event log service started
+    - 6006  # Event log service stopped
+    - 6008  # Unexpected shutdown
+    - 6009  # System boot
+    - 6013  # System uptime
+    - 4201  # Network connectivity issues
+
+# APPLICATION LOG - Application Crashes and Errors
+- name: Application
+  dataset: application
+  event_id:
+    - 1000  # Application error
+    - 1001  # Application fault bucket
+    - 1002  # Application hang
+
+# POWERSHELL - Script Execution and Command Monitoring
+- name: Microsoft-Windows-PowerShell/Operational
+  dataset: powershell
+  event_id:
+    - 4103  # Module logging (captures command execution)
+    - 4104  # Script block logging (captures script content)
+    - 4105  # Script block logging (start)
+    - 4106  # Script block logging (stop)
+
+- name: Windows PowerShell
+  dataset: powershell_legacy
+  event_id:
+    - 400  # Engine state changed (started/stopped)
+    - 403  # Engine lifecycle (stopped)
+    - 600  # Provider lifecycle (started)
+    - 800  # Pipeline execution details
+
+# WINDOWS DEFENDER - Malware Detection and Protection
+- name: Microsoft-Windows-Windows Defender/Operational
+  dataset: defender
+  event_id:
+    - 1006  # Malware detected
+    - 1007  # Action taken on malware
+    - 1008  # Failed to take action on malware
+    - 1009  # Restored quarantined item
+    - 1010  # Failed to restore quarantined item
+    - 1011  # Deleted quarantined item
+    - 1012  # Failed to delete quarantined item
+    - 1013  # Malware history deleted
+    - 1015  # Suspicious behavior detected
+    - 1116  # Malware detected
+    - 1117  # Action taken on malware
+    - 1118  # Action failed
+    - 1119  # Severe action failed
+    - 5001  # Real-time protection disabled
+    - 5004  # Real-time protection configuration changed
+    - 5007  # Configuration changed
+    - 5010  # Scanning for malware disabled
+    - 5012  # Scanning for viruses disabled
+
+# TASK SCHEDULER - Scheduled Task Activity
+- name: Microsoft-Windows-TaskScheduler/Operational
+  dataset: taskscheduler
+  event_id:
+    - 106  # Scheduled task registered
+    - 140  # Scheduled task updated
+    - 141  # Scheduled task deleted
+    - 200  # Scheduled task executed
+    - 201  # Scheduled task completed
+
+# WINDOWS FIREWALL - Network Filtering
+- name: Microsoft-Windows-Windows Firewall With Advanced Security/Firewall
+  dataset: firewall
+  event_id:
+    - 2002  # Firewall settings changed
+    - 2003  # Firewall settings changed
+    - 2004  # Firewall rule added
+    - 2005  # Firewall rule changed
+    - 2006  # Firewall rule deleted
+    - 2009  # Firewall failed to load Group Policy
+
+# APPLOCKER - Application Control
+- name: Microsoft-Windows-AppLocker/EXE and DLL
+  dataset: applocker_bin
+  ignore_older: 168h
+  event_id:
+    - 8002  # Exe allowed to run
+    - 8003  # Exe audited (would be blocked)
+    - 8004  # Exe blocked
+
+- name: Microsoft-Windows-AppLocker/MSI and Script
+  dataset: applocker_script
+  ignore_older: 168h
+  event_id:
+    - 8005  # Script allowed to run
+    - 8006  # Script audited
+    - 8007  # Script blocked
+
+# WINDOWS UPDATE - Patch Management
+- name: Microsoft-Windows-WindowsUpdateClient/Operational
+  dataset: updates
+  event_id:
+    - 19  # Update installation started
+    - 20  # Update installation completed successfully
+    - 25  # Update installation failed
+    - 41  # Windows Update service started
+    - 42  # Windows Update service stopped
+    - 44  # Windows Update started downloading
+
+# CODE INTEGRITY - Driver and System File Verification
+- name: Microsoft-Windows-CodeIntegrity/Operational
+  dataset: codeintegrity
+  event_id:
+    - 3001  # Code Integrity determined process image hash is invalid
+    - 3002  # Code Integrity determined process image hash is invalid (audit mode)
+    - 3004  # Code Integrity determined file hash is invalid
+    - 3010  # Code Integrity is unable to verify the image file
+    - 3023  # Code Integrity detected unsigned driver
+
+# WMI ACTIVITY - WMI Event Subscription (Persistence Mechanism)
+- name: Microsoft-Windows-WMI-Activity/Operational
+  dataset: wmi
+  event_id:
+    - 5857  # WMI activity
+    - 5858  # WMI error
+    - 5859  # WMI filter to consumer binding created
+    - 5860  # WMI filter registration
+    - 5861  # WMI consumer registration
+
+# BITS - Background Intelligent Transfer Service (File Downloads)
+- name: Microsoft-Windows-Bits-Client/Operational
+  dataset: bits
+  event_id:
+    - 3  # BITS transfer created
+    - 4  # BITS transfer completed
+    - 59  # BITS started a download job
+    - 60  # BITS stopped transferring
+
+# CREDENTIAL MANAGER - Credential Access
+- name: Microsoft-Windows-User-Diagnostic/Operational
+  dataset: credentials
+
+{|#EVENTLOGS_WINDOWS_SYSTEM_SYSMON_INSTALLED|}
+# SYSMON - Enhanced Process and Network Monitoring
+- name: Microsoft-Windows-Sysmon/Operational
+  dataset: sysmon
+{|/EVENTLOGS_WINDOWS_SYSTEM_SYSMON_INSTALLED|}
+
+# TERMINAL SERVICES (RDP)
+- name: Microsoft-Windows-TerminalServices-LocalSessionManager/Operational
+  dataset: rdp_session
+  event_id:
+    - 21  # Remote Desktop Services: Session logon succeeded
+    - 22  # Remote Desktop Services: Shell start notification received
+    - 23  # Remote Desktop Services: Session logoff succeeded
+    - 24  # Remote Desktop Services: Session has been disconnected
+    - 25  # Remote Desktop Services: Session reconnection succeeded
+    - 39  # Session disconnected, session ID
+    - 40  # Session reconnected, session ID
+
+- name: Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational
+  dataset: rdp_connection
+  event_id:
+    - 1149  # RDP authentication succeeded
+
+# PRINT SERVICE - Print Job Monitoring
+- name: Microsoft-Windows-PrintService/Operational
+  dataset: print
+  event_id:
+    - 307  # Print job printed
+    - 800  # Print driver installation
