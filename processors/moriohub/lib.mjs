@@ -66,7 +66,7 @@ export function logsProcessor({
   }
 
   // Add datasets of any were passed
-  if (datasets) config.datasets = datasets
+  if (datasets) config.settings.datasets = datasets
 
   return config
 }
