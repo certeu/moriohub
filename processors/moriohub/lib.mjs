@@ -15,7 +15,7 @@ export function logsProcessor({
   topics = ['logs'], // The topics to subscribe to
   datasets = false, // The datasets to subscribe to
 }) {
-  if (!module || !handler) return undefined
+  if (!module || !handler) return false
 
   const config = {
     id: `moriohub_logs_${module}${idSuffix}`,
@@ -87,9 +87,9 @@ export function metricsProcessor({
   handler = false, // The handler method
   topics = ['metrics'], // The topics to subscribe to
 }) {
-  if (!module || !dataset || !handler) return undefined
+  if (!module || !dataset || !handler) return false
 
-  const config = {
+  return {
     id: `moriohub_metrics_${module}_${dataset}`,
     info: `This stream processor plugin will process metrics data from the ${dataset} dataset of the ${module} module.`,
     settings: {
