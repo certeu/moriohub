@@ -4,7 +4,7 @@ import { metricsProcessor } from '../../lib.mjs'
  * Morio stream processors to handle metrics data from the linux-morio-tap module
  * There is only one dataset in this module (json) so we keep the handler in this file.
  */
-export default [metricsProcessor({ module: 'linux-morio-tap', dataset: 'json', handler, })]
+export default metricsProcessor({ module: 'linux-morio-tap', dataset: 'json', handler, })
 
 /*
  * Caches json metricsets. Does not (currently) eventify.
