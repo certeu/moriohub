@@ -1,0 +1,39 @@
+- moriodata:
+    info: "Collects log data from the Morio Tap service on Linux systems"
+
+- type: filestream
+  id: tap_logs
+  paths:
+    - /var/log/morio/moriod/tap/tap*.log
+  processors:
+    # Set dataset
+    - add_labels:
+        labels:
+          morio.dataset: tap-log
+    # Parse log message as JSON
+    - decode_json_fields:
+        fields: ["message"]
+        process_array: false
+        max_depth: 2
+        target: "morio.tap.log"
+        overwrite_keys: false
+        add_error_key: false
+
+- type: filestream
+  id: tap_error_logs
+  paths:
+    - /var/log/morio/moriod/tap/error*.log
+  processors:
+    # Set dataset
+    - add_labels:
+        labels:
+          morio.dataset: tap-error-log
+    # Parse log message as JSON
+    - decode_json_fields:
+        fields: ["message"]
+        process_array: false
+        max_depth: 2
+        target: "morio.tap.error_log"
+        overwrite_keys: false
+        add_error_key: false
+

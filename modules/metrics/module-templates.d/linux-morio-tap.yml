@@ -1,0 +1,13 @@
+- moriodata:
+    info: "Collects metrics from the Morio Tap service on Linux systems"
+    vars:
+      METRICS_LINUX_MORIO_TAP_HOST:
+        dflt: "http://localhost:9666"
+        info: The host to connect to for accessing the /metrics/all endpoint
+
+- module: http
+  period: "{| MORIO_TICK |}"
+  namespace: "morio.tap"
+  path: "/metrics/all"
+  hosts: [ "{| METRICS_LINUX_MORIO_TAP_HOST |}" ]
+  metricsets: [ "json" ]
