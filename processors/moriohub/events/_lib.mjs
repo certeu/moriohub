@@ -127,6 +127,8 @@ async function handleEscalation(params, rule, first=true) {
     type: data.morio.event.type,
     reps,
   }
+  if (data.morio.event.msg) escalation.msg = data.morio.event.msg
+  if (data.morio.event.md_msg) escalation.md_msg = data.morio.event.md_msg
   if (rule.alarm) {
     if (rule.debug) debug.msg('Producing an alarm', escalation)
     tools.produce.alarm(escalation)
