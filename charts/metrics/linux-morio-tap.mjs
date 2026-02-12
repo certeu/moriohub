@@ -13,18 +13,23 @@ export default {
     charts.lagt = {
       ...clone(templates.charts.line),
       series: {
-            ...templates.series.line,
-            name: `Lag`,
+        ...templates.series.line,
+        name: `Lag`,
         areaStyle: {
           opacity: 0.2,
           color: chartGradient('#1b88a2'),
         },
-            data: data.map((entry, i) => {
-              let val = 0
-             for (const id of threads) val += entry.instances[id].counters.lag.total
-              return [entry.timestamp, val]
-            })
-          },
+        // When the service restarts, we may end up with a data entry
+        // that lacks counters. So let's guard against that
+        data: data.map((entry, i) => {
+          let val = 0
+          // Set value to -1 if it's missing for some reason
+          for (const id of threads) {
+            val += entry.instances?.[id]?.counters?.lag?.total || -1
+          }
+          return [entry.timestamp, val]
+        })
+      },
       id: 'lagt',
     }
     // Set titles and yAxis label
@@ -55,7 +60,8 @@ export default {
         data: data.map((entry, i) => {
           let val = 0
           for (const id of threads) {
-            if (entry.instances[id].counters.lag.topics[topic]) val += entry.instances[id].counters.lag.topics[topic]
+            // Add topic count, or add zero if it's missing
+            val += entry.instances?.[id]?.counters?.lag?.topics?.[topic] || 0
           }
           return [entry.timestamp, val]
         })
@@ -90,8 +96,19 @@ export default {
             if (i === 0) val = 0
             else {
               curval = 0
-              for (const id of threads) curval += entry.instances[id].counters.total.messages
+              for (const id of threads) {
+                // Add total count, or add zero if it's missing
+                curval += entry.instances?.[id]?.counters?.total?.messages || 0
+              }
               val = Math.ceil((curval - prev)/30)
+              /*
+               * When the counter resets (after a restart for example)
+               * the throughput will be an enourmous negative value
+               * so we just set it to zero as that will make the graph
+               * show what actually happens (brief zero troughput rather
+               * than a sudden negative throughput)
+               */
+              if (val < 1) val = 0
               prev = curval
             }
             return [entry.timestamp, val]
@@ -122,8 +139,16 @@ export default {
           data: data.map((entry, i) => {
             let val
             if (i === 0) val = 0
-            else val = Math.ceil((entry.instances[id].counters.total.messages - prev)/30)
-            prev = entry.instances[id].counters.total.messages
+            else val = Math.ceil(((entry.instances?.[id]?.counters?.total?.messages || 0) - prev)/30)
+            /*
+             * When the counter resets (after a restart for example)
+             * the throughput will be an enourmous negative value
+             * so we just set it to zero as that will make the graph
+             * show what actually happens (brief zero troughput rather
+             * than a sudden negative throughput)
+             */
+            if (val < 1) val = 0
+            prev = entry.instances?.[id]?.counters?.total?.messages || 0
             return [entry.timestamp, val]
           })
         }
@@ -160,8 +185,19 @@ export default {
             if (i === 0) val = 0
             else {
               curval = 0
-              for (const id of threads) curval += entry.instances[id].counters.topics[topic]
+              for (const id of threads) {
+                // Add topic count, or add zero if it's missing
+                curval += entry.instances?.[id]?.counters?.topics?.[topic] || 0
+              }
               val = Math.ceil((curval - prev)/30)
+              /*
+               * When the counter resets (after a restart for example)
+               * the throughput will be an enourmous negative value
+               * so we just set it to zero as that will make the graph
+               * show what actually happens (brief zero troughput rather
+               * than a sudden negative throughput)
+               */
+              if (val < 1) val = 0
               prev = curval
             }
             return [entry.timestamp, val]
@@ -194,8 +230,19 @@ export default {
             if (i === 0) val = 0
             else {
               curval = 0
-              for (const id of threads) curval += entry.instances[id].counters.processors[proc]
+              for (const id of threads) {
+                // Add processor count, or add zero if it's missing
+                curval += entry.instances?.[id]?.counters?.processors?.[proc]
+              }
               val = Math.ceil((curval - prev)/30)
+              /*
+               * When the counter resets (after a restart for example)
+               * the throughput will be an enourmous negative value
+               * so we just set it to zero as that will make the graph
+               * show what actually happens (brief zero troughput rather
+               * than a sudden negative throughput)
+               */
+              if (val < 1) val = 0
               prev = curval
             }
             return [entry.timestamp, val]
