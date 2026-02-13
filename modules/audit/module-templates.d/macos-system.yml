@@ -1,0 +1,11 @@
+- moriodata:
+    info: "Audit module for MacOS"
+
+- module: system
+  datasets:
+    - host
+    - package
+    - process
+  period: {| MORIO_TICK |}
+  state.period: 8h
+  socket.include_localhost: false

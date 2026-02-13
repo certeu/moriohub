@@ -1,0 +1,45 @@
+- moriodata:
+    info: "Collects log data from the unified logging system on MacOS systems"
+
+- type: unifiedlogs # This collects all journald data
+  id: unified_everything
+  # Unified logs are VERY noisy. Turns these on at your own peril.
+  info: false
+  source: false
+  debug: false
+  backtrace: false
+  signpost: false
+  backfill: false
+  predicate:
+    # Security-focused predicates
+    - 'eventType == "logEvent" AND (subsystem == "com.apple.securityd" OR subsystem == "com.apple.opendirectoryd" OR subsystem == "com.apple.authd")'
+    - 'subsystem == "com.apple.login" AND category == "authorization"'
+    - 'subsystem == "com.apple.authorization" OR subsystem == "com.apple.TCC"'
+    - 'subsystem == "com.apple.xpc" AND messageType == "Error"'
+    - 'subsystem == "com.apple.install" OR process == "softwareupdated"'
+    - 'subsystem == "com.apple.kernel" AND (category CONTAINS "security" OR category CONTAINS "firewall")'
+    - 'processImagePath CONTAINS "/usr/sbin/" OR processImagePath CONTAINS "/usr/libexec/security"'
+    # System health and changes
+    - 'subsystem == "com.apple.system.logger" AND messageType IN {"Error", "Fault"}'
+    - 'subsystem == "com.apple.diskmanagement" AND messageType != "Debug"'
+    - 'subsystem == "com.apple.powermanagement" AND messageType IN {"Error", "Fault"}'
+    # Network security
+    - 'process == "networkserviceproxy" OR process == "nesessionmanager"'
+  process:
+    - securityd
+    - authd
+    - opendirectoryd
+    - syslogd
+    - softwareupdated
+    - installd
+    - trustd
+    - amfid
+    - syspolicyd
+  processors:
+    - decode_json_fields:
+        fields: ["message"]
+        process_array: false
+        max_depth: 4
+        target: "message_json"
+        overwrite_keys: false
+        add_error_key: false
