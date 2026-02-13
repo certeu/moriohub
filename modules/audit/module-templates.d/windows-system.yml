@@ -1,10 +1,9 @@
 - moriodata:
-    info: "Audit module for MacOS"
+    info: "Audit module for Windows"
 
 - module: system
   datasets:
     - host
-    - package
     - process
   period: {| MORIO_TICK |}
   state.period: 8h
