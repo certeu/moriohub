@@ -1,5 +1,0 @@
-# noop
-#
-# Filebeat does not list inputs as modules.
-# So we keep an empty file here to make sure this shows up as a Filebeat module.
-#

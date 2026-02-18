@@ -1,9 +1,0 @@
-- moriodata:
-    info: "Audit module for Windows"
-
-- module: system
-  datasets:
-    - host
-    - process
-  period: {| MORIO_TICK |}
-  state.period: 8h
